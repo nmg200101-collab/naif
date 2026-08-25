@@ -17,8 +17,10 @@ jobs:
 
       - name: Extract Unity project
         run: |
+          rm -rf UnityProject
           mkdir -p UnityProject
           unzip -o RealDrivingAcademy_Stage2_CI_Safe.zip -d UnityProject
+          test -f UnityProject/RealDrivingAcademy_Prototype/ProjectSettings/ProjectVersion.txt
 
       - name: Build Android
         uses: game-ci/unity-builder@v4
@@ -27,14 +29,16 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          projectPath: UnityProject
+          projectPath: UnityProject/RealDrivingAcademy_Prototype
           targetPlatform: Android
           unityVersion: 2022.3.62f1
           buildMethod: BuildAndroid.BuildAPK
+          versioning: None
+          allowDirtyBuild: true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: RealDrivingAcademy-Android
-          path: UnityProject/Builds/Android/*.apk
+          path: UnityProject/RealDrivingAcademy_Prototype/Builds/Android/*.apk
           if-no-files-found: error
