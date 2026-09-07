@@ -1,44 +1,62 @@
-name: Build Android APK
+name: RDA V50 Foundation Validation
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - rda-v50-clean-rebuild
 
 jobs:
-  build:
-    name: Build Real Driving Academy
+  validate:
+    name: Unity 2022.3.62f2 Foundation / Android
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout clean rebuild
         uses: actions/checkout@v4
 
-      - name: Extract Unity project
+      - name: Verify immutable project version
         run: |
-          rm -rf UnityProject
-          mkdir -p UnityProject
-          unzip -o RealDrivingAcademy_Stage2_CI_Safe.zip -d UnityProject
-          test -f UnityProject/RealDrivingAcademy_Prototype/ProjectSettings/ProjectVersion.txt
+          grep -q "2022.3.62f2" ProjectSettings/ProjectVersion.txt
+          test -f Packages/manifest.json
+          test -f RDA_V50_ACCEPTANCE_CHECKLIST.md
 
-      - name: Build Android
+      - name: Unity EditMode tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          unityVersion: 2022.3.62f2
+          testMode: editmode
+          artifactsPath: test-artifacts
+
+      - name: Build Android foundation APK
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          projectPath: UnityProject/RealDrivingAcademy_Prototype
+          projectPath: .
           targetPlatform: Android
-          unityVersion: 2022.3.62f1
-          buildMethod: BuildAndroid.BuildAPK
+          unityVersion: 2022.3.62f2
+          buildMethod: RDA.V50.EditorTools.RDACIBuild.BuildAndroid
           versioning: None
           allowDirtyBuild: true
 
-      - name: Upload APK
+      - name: Upload validation APK
         uses: actions/upload-artifact@v4
         with:
-          name: RealDrivingAcademy-Android
-          path: UnityProject/RealDrivingAcademy_Prototype/Builds/Android/*.apk
+          name: RDA-V50-FOUNDATION-VALIDATION
+          path: Builds/Android/RDA-V50-FOUNDATION-VALIDATION.apk
           if-no-files-found: error
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RDA-V50-TEST-RESULTS
+          path: test-artifacts
+          if-no-files-found: warn
