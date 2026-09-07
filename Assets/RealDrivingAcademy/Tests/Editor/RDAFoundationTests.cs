@@ -1,4 +1,3 @@
-#if UNITY_EDITOR
 using NUnit.Framework;
 using RDA.V50.Academy;
 using RDA.V50.Save;
@@ -26,4 +25,3 @@ namespace RDA.V50.Tests
         }
     }
 }
-#endif
