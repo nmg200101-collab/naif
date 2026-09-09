@@ -36,6 +36,7 @@ jobs:
           echo "0db91e94a5407702c5e958d69b0f9b33f603e2f000471fa304f6054a8fd6136f  appeal-pro-source.zip" | sha256sum -c -
           unzip -t appeal-pro-source.zip
           unzip -q appeal-pro-source.zip
+          sed -i '/^import androidx\.compose\.foundation\.layout\.weight$/d' AppealPro_V0.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
 
       - name: Build debug APK
         working-directory: AppealPro_V0.3
