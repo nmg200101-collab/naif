@@ -1,7 +1,7 @@
 {
   "name": "RDA.V50.Runtime",
   "rootNamespace": "RDA.V50",
-  "references": [],
+  "references": ["Unity.ugui"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

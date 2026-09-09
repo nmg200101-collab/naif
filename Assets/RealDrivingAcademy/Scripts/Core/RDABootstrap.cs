@@ -7,24 +7,25 @@ namespace RDA.V50.Core
     [DisallowMultipleComponent]
     public sealed class RDABootstrap : MonoBehaviour
     {
-        [SerializeField, Min(0f)] private float splashSeconds = 2.25f;
+        [SerializeField, Min(0f)] private float splashSeconds = 1.25f;
         private bool transitioning;
 
         private void Awake()
         {
             if (SceneManager.GetActiveScene().name != RDASceneFlow.Boot)
                 Debug.LogWarning("[RDA] Bootstrap is intended for RDA_Boot.");
+
             RDAQualityFoundation.ApplyMobileBaseline();
+            RDAAppSession.Initialize();
         }
 
         private IEnumerator Start()
         {
             yield return new WaitForSecondsRealtime(splashSeconds);
-            if (!transitioning)
-            {
-                transitioning = true;
-                RDASceneFlow.LoadLogin();
-            }
+            if (transitioning) yield break;
+
+            transitioning = true;
+            RDASceneFlow.LoadLogin();
         }
     }
 }

@@ -9,17 +9,25 @@ namespace RDA.V50.Core
         public const string Login = "RDA_Login";
         public const string MainMenu = "RDA_MainMenu";
 
-        public static void Load(string sceneName)
+        public static bool Load(string sceneName)
         {
             if (string.IsNullOrWhiteSpace(sceneName))
             {
                 Debug.LogError("[RDA] SceneFlow rejected an empty scene name.");
-                return;
+                return false;
             }
+
+            if (!Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Debug.LogError($"[RDA] Scene is not available in Build Settings: {sceneName}");
+                return false;
+            }
+
             SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+            return true;
         }
 
-        public static void LoadLogin() => Load(Login);
-        public static void LoadMainMenu() => Load(MainMenu);
+        public static bool LoadLogin() => Load(Login);
+        public static bool LoadMainMenu() => Load(MainMenu);
     }
 }
