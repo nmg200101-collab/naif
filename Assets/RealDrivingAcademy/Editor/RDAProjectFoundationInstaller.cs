@@ -24,6 +24,7 @@ namespace RDA.V50.EditorTools
             if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
             EnsureFoundationFolders();
+            ApplyProjectSerializationBaseline();
             CreateBootScene();
             CreateLoginScene();
             CreateMainMenuScene();
@@ -54,6 +55,12 @@ namespace RDA.V50.EditorTools
                 Root + "/Scripts/Academy", Root + "/Scripts/Traffic", Root + "/Scripts/World", Root + "/Scripts/UI", Root + "/Scripts/Save", Root + "/Scripts/Audio",
                 Root + "/Settings", Root + "/Tests", Root + "/Tests/Editor"
             }) EnsureFolder(path);
+        }
+
+        private static void ApplyProjectSerializationBaseline()
+        {
+            EditorSettings.serializationMode = SerializationMode.ForceText;
+            EditorSettings.externalVersionControl = "Visible Meta Files";
         }
 
         private static void CreateBootScene()
@@ -105,7 +112,7 @@ namespace RDA.V50.EditorTools
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.AutoRotation;
             PlayerSettings.allowedAutorotateToLandscapeLeft = true;
             PlayerSettings.allowedAutorotateToLandscapeRight = true;
             PlayerSettings.allowedAutorotateToPortrait = false;
