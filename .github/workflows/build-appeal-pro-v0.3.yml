@@ -5,7 +5,7 @@ on:
     branches:
       - appeal-pro-v0.3-apk
     paths:
-      - 'appeal-pro-source.zip.b64'
+      - 'appeal-pro-source.part.*.b64'
       - '.github/workflows/build-appeal-pro-v0.3.yml'
   workflow_dispatch:
 
@@ -30,7 +30,10 @@ jobs:
 
       - name: Reconstruct and extract Appeal Pro source
         run: |
-          base64 -d appeal-pro-source.zip.b64 > appeal-pro-source.zip
+          cat appeal-pro-source.part.00.b64 appeal-pro-source.part.01.b64 appeal-pro-source.part.02.b64 appeal-pro-source.part.03.b64 appeal-pro-source.part.04.b64 > appeal-pro-source.b64
+          test "$(wc -c < appeal-pro-source.b64)" -eq 34588
+          base64 -d appeal-pro-source.b64 > appeal-pro-source.zip
+          echo "0db91e94a5407702c5e958d69b0f9b33f603e2f000471fa304f6054a8fd6136f  appeal-pro-source.zip" | sha256sum -c -
           unzip -t appeal-pro-source.zip
           unzip -q appeal-pro-source.zip
 
@@ -40,6 +43,11 @@ jobs:
 
       - name: Rename APK
         run: cp AppealPro_V0.3/app/build/outputs/apk/debug/app-debug.apk AppealPro-V0.3-debug.apk
+
+      - name: Verify APK
+        run: |
+          test -s AppealPro-V0.3-debug.apk
+          sha256sum AppealPro-V0.3-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
