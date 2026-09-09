@@ -5,7 +5,7 @@ on:
     branches:
       - appeal-pro-v0.3-apk
     paths:
-      - 'appeal-pro-source.zip'
+      - 'appeal-pro-source.zip.b64'
       - '.github/workflows/build-appeal-pro-v0.3.yml'
   workflow_dispatch:
 
@@ -28,8 +28,11 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
-      - name: Extract Appeal Pro source
-        run: unzip -q appeal-pro-source.zip
+      - name: Reconstruct and extract Appeal Pro source
+        run: |
+          base64 -d appeal-pro-source.zip.b64 > appeal-pro-source.zip
+          unzip -t appeal-pro-source.zip
+          unzip -q appeal-pro-source.zip
 
       - name: Build debug APK
         working-directory: AppealPro_V0.3
