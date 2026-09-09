@@ -1,0 +1,46 @@
+name: Build Appeal Pro APK
+
+on:
+  push:
+    branches:
+      - appeal-pro-v0.3-apk
+    paths:
+      - 'appeal-pro-source.zip'
+      - '.github/workflows/build-appeal-pro-v0.3.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Extract Appeal Pro source
+        run: unzip -q appeal-pro-source.zip
+
+      - name: Build debug APK
+        working-directory: AppealPro_V0.3
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Rename APK
+        run: cp AppealPro_V0.3/app/build/outputs/apk/debug/app-debug.apk AppealPro-V0.3-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V0.3-APK
+          path: AppealPro-V0.3-debug.apk
+          if-no-files-found: error
