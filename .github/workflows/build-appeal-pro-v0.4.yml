@@ -36,6 +36,7 @@ jobs:
           echo "237fb99c2f023b3b8c9d4fa2a4ee5db780a606ee026a4ce39fc5031ff9496a1b  AppealPro_V0.4_Source.zip" | sha256sum -c -
           unzip -t AppealPro_V0.4_Source.zip
           unzip -q AppealPro_V0.4_Source.zip
+          sed -i '292s/it }) }/it } }/' AppealPro_V0.4/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
 
       - name: Build debug APK
         working-directory: AppealPro_V0.4
