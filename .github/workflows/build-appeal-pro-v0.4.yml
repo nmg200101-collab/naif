@@ -30,7 +30,7 @@ jobs:
 
       - name: Reconstruct and verify V0.4 source
         run: |
-          cat appeal-v04.part.00.b64 appeal-v04.part.01.b64 appeal-v04.part.02.b64 appeal-v04.part.03.b64 > AppealPro_V0.4_Source.zip.b64
+          cat appeal-v04.part.00.b64 appeal-v04.part.01x0.b64 appeal-v04.part.01x1.b64 appeal-v04.part.02.b64 appeal-v04.part.03.b64 > AppealPro_V0.4_Source.zip.b64
           test "$(wc -c < AppealPro_V0.4_Source.zip.b64)" -eq 43244
           base64 -d AppealPro_V0.4_Source.zip.b64 > AppealPro_V0.4_Source.zip
           echo "237fb99c2f023b3b8c9d4fa2a4ee5db780a606ee026a4ce39fc5031ff9496a1b  AppealPro_V0.4_Source.zip" | sha256sum -c -
