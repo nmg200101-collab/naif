@@ -1,0 +1,57 @@
+name: Build Appeal Pro V0.4 APK
+
+on:
+  push:
+    branches:
+      - appeal-pro-v0.4-recovery-center
+    paths:
+      - 'appeal-v04.part.*.b64'
+      - '.github/workflows/build-appeal-pro-v0.4.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Reconstruct and verify V0.4 source
+        run: |
+          cat appeal-v04.part.00.b64 appeal-v04.part.01.b64 appeal-v04.part.02.b64 appeal-v04.part.03.b64 > AppealPro_V0.4_Source.zip.b64
+          test "$(wc -c < AppealPro_V0.4_Source.zip.b64)" -eq 43244
+          base64 -d AppealPro_V0.4_Source.zip.b64 > AppealPro_V0.4_Source.zip
+          echo "237fb99c2f023b3b8c9d4fa2a4ee5db780a606ee026a4ce39fc5031ff9496a1b  AppealPro_V0.4_Source.zip" | sha256sum -c -
+          unzip -t AppealPro_V0.4_Source.zip
+          unzip -q AppealPro_V0.4_Source.zip
+
+      - name: Build debug APK
+        working-directory: AppealPro_V0.4
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Rename APK
+        run: cp AppealPro_V0.4/app/build/outputs/apk/debug/app-debug.apk AppealPro-V0.4-debug.apk
+
+      - name: Verify APK
+        run: |
+          test -s AppealPro-V0.4-debug.apk
+          sha256sum AppealPro-V0.4-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V0.4-APK
+          path: AppealPro-V0.4-debug.apk
+          if-no-files-found: error
