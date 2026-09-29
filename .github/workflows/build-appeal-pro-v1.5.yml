@@ -50,6 +50,8 @@ jobs:
           grep -q 'versionCode = 15' app/build.gradle.kts
           grep -q 'EmbeddedDnsVpnService' app/src/main/AndroidManifest.xml
           grep -q 'class EmbeddedDnsVpnService' app/src/main/java/com/appealpro/app/network/EmbeddedDnsVpnService.kt
+          sed -i 's/a3b794c6b9145d0e15d290df16e83a54ef3011c73e5cefe1adfafd64807dda01/5a7028932d35a424c20664dbc44885faca70d9eee40e786c9ca35cc9a95da4f0/g' app/src/main/java/com/appealpro/app/data/SignatureGuard.kt
+          grep -q '5a7028932d35a424c20664dbc44885faca70d9eee40e786c9ca35cc9a95da4f0' app/src/main/java/com/appealpro/app/data/SignatureGuard.kt
       - name: Build V1.5 release
         working-directory: AppealPro_V1.3
         run: gradle --no-daemon :app:assembleRelease
