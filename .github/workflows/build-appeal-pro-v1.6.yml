@@ -1,0 +1,117 @@
+name: Build Appeal Pro V1.6 Mail UX
+
+on:
+  push:
+    branches:
+      - appeal-pro-v1.6-mail-ux
+    paths:
+      - 'appeal-v16.patch.*.b64'
+      - 'appeal-v16.beta.patch.gz.b64'
+      - '.github/workflows/build-appeal-pro-v1.6.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Reconstruct V1.2
+        run: |
+          cat appeal-v12.part.00.b64 appeal-v12.part.01.b64 appeal-v12.part.02.b64 appeal-v12.part.03.b64 appeal-v12.part.04.b64 appeal-v12.part.05.b64 appeal-v12.part.06.b64 appeal-v12.part.07.b64 appeal-v12.part.08.b64 > AppealPro_V1.2_Final_Source.zip.b64
+          base64 -d AppealPro_V1.2_Final_Source.zip.b64 > AppealPro_V1.2_Final_Source.zip
+          echo "22a50d76eed41d888c492a147a6aacedc4aa7f827c73702255473411ad6e7af4  AppealPro_V1.2_Final_Source.zip" | sha256sum -c -
+          unzip -q AppealPro_V1.2_Final_Source.zip
+
+      - name: Apply V1.3
+        run: |
+          cp -a AppealPro_V1.2 AppealPro_V1.3
+          cat appeal-v13.patch.0.b64 appeal-v13.patch.1.b64 appeal-v13.patch.2.b64 appeal-v13.patch.3.b64 appeal-v13.patch.4.b64 | base64 -d | gzip -d > /tmp/v13.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v13.patch
+
+      - name: Apply V1.4
+        run: |
+          base64 -d appeal-v14.patch.gz.b64 | gzip -d > /tmp/v14.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v14.patch
+
+      - name: Apply V1.5
+        run: |
+          cat appeal-v15.patch.0.b64 appeal-v15.patch.1.b64 appeal-v15.patch.2.b64 | base64 -d | gzip -d > /tmp/v15.patch
+          cd AppealPro_V1.3
+          patch -p5 < /tmp/v15.patch
+          sed -i 's/a3b794c6b9145d0e15d290df16e83a54ef3011c73e5cefe1adfafd64807dda01/5a7028932d35a424c20664dbc44885faca70d9eee40e786c9ca35cc9a95da4f0/g' app/src/main/java/com/appealpro/app/data/SignatureGuard.kt
+
+      - name: Apply V1.6 mail and UX
+        run: |
+          cat appeal-v16.patch.0.b64 appeal-v16.patch.1.b64 | base64 -d | gzip -d > /tmp/v16.patch
+          cd AppealPro_V1.3
+          patch -p2 < /tmp/v16.patch
+          cd ..
+          base64 -d appeal-v16.beta.patch.gz.b64 | gzip -d > /tmp/v16beta.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v16beta.patch
+          grep -q 'versionCode = 16' app/build.gradle.kts
+          grep -q 'versionName = "1.6.0"' app/build.gradle.kts
+          grep -q 'applicationIdSuffix = ".beta"' app/build.gradle.kts
+          grep -q 'supportEmailRoute' app/src/main/java/com/appealpro/app/data/AppealRepository.kt
+          grep -q 'android@support.whatsapp.com' app/src/main/java/com/appealpro/app/data/AppealRepository.kt
+          grep -q 'support@support.whatsapp.com' app/src/main/java/com/appealpro/app/data/AppealRepository.kt
+          grep -q 'smb_web@support.whatsapp.com' app/src/main/java/com/appealpro/app/data/AppealRepository.kt
+          grep -q 'اختيار صياغة الطلب' app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
+
+      - name: Build V1.6 release and beta
+        working-directory: AppealPro_V1.3
+        run: |
+          gradle --no-daemon :app:assembleRelease
+          gradle --no-daemon :app:assembleDebug
+
+      - name: Collect artifacts
+        run: |
+          RELEASE=$(find AppealPro_V1.3/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n 1)
+          DEBUG=$(find AppealPro_V1.3/app/build/outputs/apk/debug -maxdepth 1 -name '*.apk' | head -n 1)
+          test -s "$RELEASE"
+          test -s "$DEBUG"
+          cp "$RELEASE" AppealPro-V1.6-unsigned-release.apk
+          cp "$DEBUG" AppealPro-V1.6-BETA-debug.apk
+          (cd AppealPro_V1.3 && zip -qr ../AppealPro_V1.6_Source.zip .)
+          sha256sum AppealPro-V1.6-unsigned-release.apk AppealPro-V1.6-BETA-debug.apk AppealPro_V1.6_Source.zip
+          ls -lh AppealPro-V1.6-unsigned-release.apk AppealPro-V1.6-BETA-debug.apk AppealPro_V1.6_Source.zip
+
+      - name: Upload V1.6 beta
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.6-BETA-APK
+          path: AppealPro-V1.6-BETA-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload V1.6 unsigned release
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.6-Unsigned-Release
+          path: AppealPro-V1.6-unsigned-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload V1.6 source
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.6-Source
+          path: AppealPro_V1.6_Source.zip
+          if-no-files-found: error
+          retention-days: 30
