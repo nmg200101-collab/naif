@@ -5,7 +5,7 @@ on:
     branches:
       - appeal-pro-v1.3-permanent-signing-vpn
     paths:
-      - 'appeal-v13.patch.*.b64'
+      - 'appeal-v13.patch.[0-4].b64'
       - '.github/workflows/build-appeal-pro-v1.3.yml'
   workflow_dispatch:
 
@@ -40,7 +40,7 @@ jobs:
       - name: Apply V1.3 permanent signing and VPN patch
         run: |
           cp -a AppealPro_V1.2 AppealPro_V1.3
-          cat appeal-v13.patch.a.b64 appeal-v13.patch.b.b64 | base64 -d | gzip -d > /tmp/AppealPro_V1.3.patch
+          cat appeal-v13.patch.0.b64 appeal-v13.patch.1.b64 appeal-v13.patch.2.b64 appeal-v13.patch.3.b64 appeal-v13.patch.4.b64 | base64 -d | gzip -d > /tmp/AppealPro_V1.3.patch
           cd AppealPro_V1.3
           patch -p1 < /tmp/AppealPro_V1.3.patch
           grep -q 'versionCode = 13' app/build.gradle.kts
