@@ -30,7 +30,7 @@ jobs:
 
       - name: Reconstruct and verify V1 Final source
         run: |
-          cat appeal-v1-final.part.00.b64 appeal-v1-final.part.01.b64 appeal-v1-final.part.02.b64 appeal-v1-final.part.03.b64 appeal-v1-final.part.04.b64 appeal-v1-final.part.05.b64 appeal-v1-final.part.06a.b64 appeal-v1-final.part.06b.b64 appeal-v1-final.part.07.b64 > AppealPro_V1_Final_Source.zip.b64
+          cat appeal-v1-final.part.00.b64 appeal-v1-final.part.01.b64 appeal-v1-final.part.02.b64 appeal-v1-final.part.03a.b64 appeal-v1-final.part.03b.b64 appeal-v1-final.part.04.b64 appeal-v1-final.part.05.b64 appeal-v1-final.part.06a.b64 appeal-v1-final.part.06b.b64 appeal-v1-final.part.07.b64 > AppealPro_V1_Final_Source.zip.b64
           test "$(wc -c < AppealPro_V1_Final_Source.zip.b64)" -eq 58932
           base64 -d AppealPro_V1_Final_Source.zip.b64 > AppealPro_V1_Final_Source.zip
           echo "04fd0c7a58709e4ab5d2404696b5f096c3852cd97a90be0c8231d3623f932281  AppealPro_V1_Final_Source.zip" | sha256sum -c -
