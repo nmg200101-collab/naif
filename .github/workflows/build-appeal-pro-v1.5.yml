@@ -46,7 +46,7 @@ jobs:
         run: |
           cat appeal-v15.patch.0.b64 appeal-v15.patch.1.b64 appeal-v15.patch.2.b64 | base64 -d | gzip -d > /tmp/v15.patch
           cd AppealPro_V1.3
-          patch -p1 < /tmp/v15.patch
+          patch -p4 < /tmp/v15.patch
           grep -q 'versionCode = 15' app/build.gradle.kts
           grep -q 'EmbeddedDnsVpnService' app/src/main/AndroidManifest.xml
           grep -q 'class EmbeddedDnsVpnService' app/src/main/java/com/appealpro/app/network/EmbeddedDnsVpnService.kt
