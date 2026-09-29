@@ -1,0 +1,33 @@
+name: Export Android Build Tools
+
+on:
+  push:
+    branches:
+      - appeal-pro-v1.3-permanent-signing-vpn
+    paths:
+      - '.github/workflows/export-android-build-tools.yml'
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate build tools
+        run: |
+          LATEST=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+          echo "LATEST=$LATEST" >> "$GITHUB_ENV"
+          echo "$LATEST"
+
+      - name: Pack apksigner and zipalign dependencies
+        run: |
+          mkdir -p export-build-tools
+          cp -a "$LATEST" export-build-tools/build-tools
+          tar -czf android-build-tools.tar.gz export-build-tools
+
+      - name: Upload tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-Build-Tools-For-Signing
+          path: android-build-tools.tar.gz
+          if-no-files-found: error
+          retention-days: 1
