@@ -1,0 +1,61 @@
+name: Build Appeal Pro V1.2 Verification Recovery
+
+on:
+  push:
+    branches:
+      - appeal-pro-v1.2-verification-recovery
+    paths:
+      - 'appeal-v12.part.*.b64'
+      - '.github/workflows/build-appeal-pro-v1.2.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Reconstruct and verify V1.2 source
+        run: |
+          cat appeal-v12.part.00.b64 appeal-v12.part.01.b64 appeal-v12.part.02.b64 appeal-v12.part.03.b64 appeal-v12.part.04.b64 appeal-v12.part.05.b64 appeal-v12.part.06.b64 appeal-v12.part.07.b64 appeal-v12.part.08.b64 > AppealPro_V1.2_Final_Source.zip.b64
+          test "$(wc -c < AppealPro_V1.2_Final_Source.zip.b64)" -eq 68592
+          base64 -d AppealPro_V1.2_Final_Source.zip.b64 > AppealPro_V1.2_Final_Source.zip
+          echo "22a50d76eed41d888c492a147a6aacedc4aa7f827c73702255473411ad6e7af4  AppealPro_V1.2_Final_Source.zip" | sha256sum -c -
+          unzip -t AppealPro_V1.2_Final_Source.zip
+          unzip -q AppealPro_V1.2_Final_Source.zip
+          grep -q 'versionCode = 12' AppealPro_V1.2/app/build.gradle.kts
+          grep -q 'versionName = "1.2.0"' AppealPro_V1.2/app/build.gradle.kts
+
+      - name: Build V1.2 debug APK
+        working-directory: AppealPro_V1.2
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Rename APK
+        run: cp AppealPro_V1.2/app/build/outputs/apk/debug/app-debug.apk AppealPro-V1.2-Verification-Recovery-debug.apk
+
+      - name: Verify APK
+        run: |
+          test -s AppealPro-V1.2-Verification-Recovery-debug.apk
+          sha256sum AppealPro-V1.2-Verification-Recovery-debug.apk
+          ls -lh AppealPro-V1.2-Verification-Recovery-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.2-Verification-Recovery-APK
+          path: AppealPro-V1.2-Verification-Recovery-debug.apk
+          if-no-files-found: error
+          retention-days: 30
