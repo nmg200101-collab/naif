@@ -1,0 +1,38 @@
+name: Export Android APK signing tools
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - appeal-pro-v1.5-embedded-network
+    paths:
+      - '.github/workflows/export-apksigner.yml'
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate build tools
+        run: |
+          BT=$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)
+          echo "BT=$BT" >> "$GITHUB_ENV"
+          echo "Using $BT"
+          test -x "$ANDROID_HOME/build-tools/$BT/apksigner"
+          test -x "$ANDROID_HOME/build-tools/$BT/zipalign"
+          test -f "$ANDROID_HOME/build-tools/$BT/lib/apksigner.jar"
+      - name: Package tools
+        run: |
+          mkdir -p apktools/lib
+          cp "$ANDROID_HOME/build-tools/$BT/apksigner" apktools/
+          cp "$ANDROID_HOME/build-tools/$BT/zipalign" apktools/
+          cp "$ANDROID_HOME/build-tools/$BT/lib/apksigner.jar" apktools/lib/
+          chmod +x apktools/apksigner apktools/zipalign
+          tar -czf android-apk-signing-tools.tgz apktools
+          sha256sum android-apk-signing-tools.tgz
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-signing-tools
+          path: android-apk-signing-tools.tgz
+          if-no-files-found: error
+          retention-days: 1
