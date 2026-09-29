@@ -1,0 +1,70 @@
+name: Build Appeal Pro V1.3 Permanent Signing VPN
+
+on:
+  push:
+    branches:
+      - appeal-pro-v1.3-permanent-signing-vpn
+    paths:
+      - 'appeal-v13.patch.gz.b64'
+      - '.github/workflows/build-appeal-pro-v1.3.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Reconstruct verified V1.2 baseline
+        run: |
+          cat appeal-v12.part.00.b64 appeal-v12.part.01.b64 appeal-v12.part.02.b64 appeal-v12.part.03.b64 appeal-v12.part.04.b64 appeal-v12.part.05.b64 appeal-v12.part.06.b64 appeal-v12.part.07.b64 appeal-v12.part.08.b64 > AppealPro_V1.2_Final_Source.zip.b64
+          test "$(wc -c < AppealPro_V1.2_Final_Source.zip.b64)" -eq 68592
+          base64 -d AppealPro_V1.2_Final_Source.zip.b64 > AppealPro_V1.2_Final_Source.zip
+          echo "22a50d76eed41d888c492a147a6aacedc4aa7f827c73702255473411ad6e7af4  AppealPro_V1.2_Final_Source.zip" | sha256sum -c -
+          unzip -t AppealPro_V1.2_Final_Source.zip
+          unzip -q AppealPro_V1.2_Final_Source.zip
+
+      - name: Apply V1.3 permanent signing and VPN patch
+        run: |
+          cp -a AppealPro_V1.2 AppealPro_V1.3
+          base64 -d appeal-v13.patch.gz.b64 | gzip -d > /tmp/AppealPro_V1.3.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/AppealPro_V1.3.patch
+          grep -q 'versionCode = 13' app/build.gradle.kts
+          grep -q 'versionName = "1.3.0"' app/build.gradle.kts
+          grep -q 'a3b794c6b9145d0e15d290df16e83a54ef3011c73e5cefe1adfafd64807dda01' app/src/main/java/com/appealpro/app/data/SignatureGuard.kt
+          grep -q 'TRANSPORT_VPN' app/src/main/java/com/appealpro/app/data/NetworkAssist.kt
+
+      - name: Build V1.3 unsigned release APK
+        working-directory: AppealPro_V1.3
+        run: gradle --no-daemon :app:assembleRelease
+
+      - name: Locate and rename unsigned APK
+        run: |
+          APK=$(find AppealPro_V1.3/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n 1)
+          test -n "$APK"
+          test -s "$APK"
+          cp "$APK" AppealPro-V1.3-unsigned-release.apk
+          sha256sum AppealPro-V1.3-unsigned-release.apk
+          ls -lh AppealPro-V1.3-unsigned-release.apk
+
+      - name: Upload unsigned release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.3-Unsigned-Release-APK
+          path: AppealPro-V1.3-unsigned-release.apk
+          if-no-files-found: error
+          retention-days: 30
