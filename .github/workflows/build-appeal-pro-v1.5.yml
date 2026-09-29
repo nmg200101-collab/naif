@@ -1,0 +1,68 @@
+name: Build Appeal Pro V1.5 Embedded Network
+
+on:
+  push:
+    branches:
+      - appeal-pro-v1.5-embedded-network
+    paths:
+      - 'appeal-v15.patch.*.b64'
+      - '.github/workflows/build-appeal-pro-v1.5.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle 9.6.0
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+      - name: Reconstruct V1.2
+        run: |
+          cat appeal-v12.part.00.b64 appeal-v12.part.01.b64 appeal-v12.part.02.b64 appeal-v12.part.03.b64 appeal-v12.part.04.b64 appeal-v12.part.05.b64 appeal-v12.part.06.b64 appeal-v12.part.07.b64 appeal-v12.part.08.b64 > AppealPro_V1.2_Final_Source.zip.b64
+          base64 -d AppealPro_V1.2_Final_Source.zip.b64 > AppealPro_V1.2_Final_Source.zip
+          echo "22a50d76eed41d888c492a147a6aacedc4aa7f827c73702255473411ad6e7af4  AppealPro_V1.2_Final_Source.zip" | sha256sum -c -
+          unzip -q AppealPro_V1.2_Final_Source.zip
+      - name: Apply V1.3
+        run: |
+          cp -a AppealPro_V1.2 AppealPro_V1.3
+          cat appeal-v13.patch.0.b64 appeal-v13.patch.1.b64 appeal-v13.patch.2.b64 appeal-v13.patch.3.b64 appeal-v13.patch.4.b64 | base64 -d | gzip -d > /tmp/v13.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v13.patch
+      - name: Apply V1.4
+        run: |
+          base64 -d appeal-v14.patch.gz.b64 | gzip -d > /tmp/v14.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v14.patch
+      - name: Apply V1.5
+        run: |
+          cat appeal-v15.patch.0.b64 appeal-v15.patch.1.b64 appeal-v15.patch.2.b64 | base64 -d | gzip -d > /tmp/v15.patch
+          cd AppealPro_V1.3
+          patch -p1 < /tmp/v15.patch
+          grep -q 'versionCode = 15' app/build.gradle.kts
+          grep -q 'EmbeddedDnsVpnService' app/src/main/AndroidManifest.xml
+          grep -q 'class EmbeddedDnsVpnService' app/src/main/java/com/appealpro/app/network/EmbeddedDnsVpnService.kt
+      - name: Build V1.5 release
+        working-directory: AppealPro_V1.3
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Collect APK
+        run: |
+          APK=$(find AppealPro_V1.3/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n 1)
+          test -s "$APK"
+          cp "$APK" AppealPro-V1.5-Embedded-Network-unsigned.apk
+          sha256sum AppealPro-V1.5-Embedded-Network-unsigned.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppealPro-V1.5-Embedded-Network-Unsigned
+          path: AppealPro-V1.5-Embedded-Network-unsigned.apk
+          if-no-files-found: error
+          retention-days: 30
