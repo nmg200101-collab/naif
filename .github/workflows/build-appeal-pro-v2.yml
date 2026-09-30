@@ -1,4 +1,4 @@
-name: Build Appeal Pro V2 Doctor Mode
+name: Build Appeal Pro V2 Doctor Mode Phase 1
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
       - appeal-pro-v2-doctor-mode
     paths:
       - 'appeal-v20-doctor.patch.gz.b64'
+      - 'appeal-v20-doctor.patch.0.b64'
+      - 'appeal-v20-doctor.patch.1.b64'
+      - 'appeal-v20-phase1.patch.*.b64'
       - '.github/workflows/build-appeal-pro-v2.yml'
   workflow_dispatch:
 
@@ -57,12 +60,30 @@ jobs:
         run: |
           cat appeal-v20-doctor.patch.0.b64 appeal-v20-doctor.patch.1.b64 | base64 -d | gzip -d > /tmp/v20.patch
           (cd AppealPro_V1.3 && patch -p1 < /tmp/v20.patch)
-          grep -q 'versionCode = 20' AppealPro_V1.3/app/build.gradle.kts
-          grep -q 'versionName = "2.0.0"' AppealPro_V1.3/app/build.gradle.kts
-          grep -q 'object DoctorEngine' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/DoctorEngine.kt
-          grep -q 'طبيب Appeal Pro' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
 
-      - name: Build V2 beta and release
+      - name: Apply V2 Doctor Mode Phase 1
+        run: |
+          cat appeal-v20-phase1.patch.0.b64 appeal-v20-phase1.patch.1.b64 appeal-v20-phase1.patch.2.b64 appeal-v20-phase1.patch.3.b64 > /tmp/v20-phase1.patch.gz.b64
+          echo "dc41508e9466a3a47b394dac11f669aeb97d642e62c0ca4804d60e337682d27c  /tmp/v20-phase1.patch.gz.b64" | sha256sum -c -
+          base64 -d /tmp/v20-phase1.patch.gz.b64 | gzip -d > /tmp/v20-phase1.patch
+          echo "26319515508f4afba1fbe81183ca9ff0ea26bd2adbfe810257549d9fa1e33794  /tmp/v20-phase1.patch" | sha256sum -c -
+          (cd AppealPro_V1.3 && patch -p1 < /tmp/v20-phase1.patch)
+
+      - name: Verify Phase 1 source contracts
+        run: |
+          grep -q 'versionCode = 21' AppealPro_V1.3/app/build.gradle.kts
+          grep -q 'versionName = "2.0.0-phase1"' AppealPro_V1.3/app/build.gradle.kts
+          grep -q 'object ResponseRouter' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/ResponseRouter.kt
+          grep -q 'object CaseStateMachine' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/CaseStateMachine.kt
+          grep -q 'ACTION_REQUIRED' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
+          grep -q 'FOLLOW_UP_READY' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
+          grep -q 'FOLLOW_UP_SENT' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
+          grep -q 'RESPONSE_RECEIVED' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
+          grep -q 'replyToSameEmailAllowed' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
+          grep -q 'GuidedSupportFormCard' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
+          grep -q 'متابعة الحل' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
+
+      - name: Build Phase 1 beta and release
         working-directory: AppealPro_V1.3
         run: |
           gradle --no-daemon :app:assembleDebug
@@ -74,32 +95,32 @@ jobs:
           RELEASE=$(find AppealPro_V1.3/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n 1)
           test -s "$DEBUG"
           test -s "$RELEASE"
-          cp "$DEBUG" AppealPro-V2.0-Doctor-Mode-BETA.apk
-          cp "$RELEASE" AppealPro-V2.0-Doctor-Mode-unsigned.apk
-          (cd AppealPro_V1.3 && zip -qr ../AppealPro_V2.0_Doctor_Source.zip .)
-          sha256sum AppealPro-V2.0-Doctor-Mode-BETA.apk AppealPro-V2.0-Doctor-Mode-unsigned.apk AppealPro_V2.0_Doctor_Source.zip
-          ls -lh AppealPro-V2.0-Doctor-Mode-BETA.apk AppealPro-V2.0-Doctor-Mode-unsigned.apk AppealPro_V2.0_Doctor_Source.zip
+          cp "$DEBUG" AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk
+          cp "$RELEASE" AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk
+          (cd AppealPro_V1.3 && zip -qr ../AppealPro_V2.0_Doctor_Phase1_Source.zip .)
+          sha256sum AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk AppealPro_V2.0_Doctor_Phase1_Source.zip
+          ls -lh AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk AppealPro_V2.0_Doctor_Phase1_Source.zip
 
       - name: Upload beta
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-BETA
-          path: AppealPro-V2.0-Doctor-Mode-BETA.apk
+          name: AppealPro-V2.0-Doctor-Mode-Phase1-BETA
+          path: AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload unsigned release
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-Unsigned
-          path: AppealPro-V2.0-Doctor-Mode-unsigned.apk
+          name: AppealPro-V2.0-Doctor-Mode-Phase1-Unsigned
+          path: AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload source
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-Source
-          path: AppealPro_V2.0_Doctor_Source.zip
+          name: AppealPro-V2.0-Doctor-Mode-Phase1-Source
+          path: AppealPro_V2.0_Doctor_Phase1_Source.zip
           if-no-files-found: error
           retention-days: 30
