@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using RealDrivingAcademy.Persistence;
 
 namespace RealDrivingAcademy.Core
 {
@@ -12,10 +13,12 @@ namespace RealDrivingAcademy.Core
         [SerializeField] GameSessionState session = new GameSessionState();
 
         RdaSceneLoader sceneLoader;
+        RdaPersistenceService persistence;
 
         public GameFlowState FlowState => flowState;
         public GameSessionState Session => session;
         public RdaSceneLoader SceneLoader => sceneLoader;
+        public RdaPersistenceService Persistence => persistence;
 
         public event Action<GameFlowState> FlowStateChanged;
         public event Action SessionChanged;
@@ -34,6 +37,10 @@ namespace RealDrivingAcademy.Core
             sceneLoader = GetComponent<RdaSceneLoader>();
             if (sceneLoader == null)
                 sceneLoader = gameObject.AddComponent<RdaSceneLoader>();
+
+            persistence = GetComponent<RdaPersistenceService>();
+            if (persistence == null)
+                persistence = gameObject.AddComponent<RdaPersistenceService>();
         }
 
         public void SetFlowState(GameFlowState next)
