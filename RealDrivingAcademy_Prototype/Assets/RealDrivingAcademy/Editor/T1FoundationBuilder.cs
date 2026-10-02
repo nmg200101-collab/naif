@@ -282,8 +282,23 @@ namespace RealDrivingAcademy.EditorTools
             text.fontSize = size;
             text.alignment = alignment;
             text.color = Color.white;
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = GetBuiltinUiFont();
             return text;
+        }
+
+        static Font GetBuiltinUiFont()
+        {
+            Font font = null;
+            try { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
+            catch { }
+
+            if (font == null)
+            {
+                try { font = Resources.GetBuiltinResource<Font>("Arial.ttf"); }
+                catch { }
+            }
+
+            return font;
         }
 
         static void Stretch(RectTransform rect)
