@@ -1,0 +1,59 @@
+name: RDA T1 Bootstrap
+
+on:
+  push:
+    branches:
+      - rda-t1-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout T1 branch
+        uses: actions/checkout@v4
+        with:
+          ref: rda-t1-foundation
+          fetch-depth: 0
+
+      - name: Expand current RDA package
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d "RealDrivingAcademy_Prototype" ]; then
+            unzip -o RealDrivingAcademy_Stage2_CI_Safe.zip
+          fi
+          test -f RealDrivingAcademy_Prototype/ProjectSettings/ProjectVersion.txt
+
+      - name: Record T1-0 baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p Documentation/T1
+          {
+            echo "# RDA T1-0 Baseline"
+            echo
+            echo "- Source package: RealDrivingAcademy_Stage2_CI_Safe.zip"
+            echo "- Branch: rda-t1-foundation"
+            echo "- Unity version:"
+            sed 's/^/  - /' RealDrivingAcademy_Prototype/ProjectSettings/ProjectVersion.txt
+            echo "- Baseline source SHA: ${GITHUB_SHA}"
+            echo "- Status: source package extracted and project structure verified"
+          } > Documentation/T1/T1-0-BASELINE.md
+
+      - name: Commit expanded baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RealDrivingAcademy_Prototype Documentation/T1/T1-0-BASELINE.md
+          if git diff --cached --quiet; then
+            echo "No bootstrap changes to commit."
+            exit 0
+          fi
+          git commit -m "RDA T1-0: establish expanded Unity baseline"
+          git push origin HEAD:rda-t1-foundation
