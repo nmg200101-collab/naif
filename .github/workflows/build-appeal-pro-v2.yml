@@ -10,6 +10,7 @@ on:
       - 'appeal-v20-doctor.patch.1.b64'
       - 'appeal-v20-phase1.patch.*.b64'
       - 'appeal-v201-verification-recovery.patch.gz.b64'
+      - 'appeal-v201-verification-recovery-fix1.patch.gz.b64'
       - '.github/workflows/build-appeal-pro-v2.yml'
   workflow_dispatch:
 
@@ -76,6 +77,13 @@ jobs:
           base64 -d appeal-v201-verification-recovery.patch.gz.b64 | gzip -d > /tmp/v201-verification-recovery.patch
           echo "d4ad61766978e0d014774dcc2846f40ad1e166459700a99a07a61f802fd09a3f  /tmp/v201-verification-recovery.patch" | sha256sum -c -
           (cd AppealPro_V1.3 && patch -p1 < /tmp/v201-verification-recovery.patch)
+
+      - name: Apply V2.0.1 compile fix
+        run: |
+          echo "a78c90aeac52ffadb331e70bab00ad1c094584b1492677b026cbfb6eb785cefc  appeal-v201-verification-recovery-fix1.patch.gz.b64" | sha256sum -c -
+          base64 -d appeal-v201-verification-recovery-fix1.patch.gz.b64 | gzip -d > /tmp/v201-fix1.patch
+          echo "13dedae77512326e5205f772e0d53803aa948c7c2decf0c5fba7b04e59556590  /tmp/v201-fix1.patch" | sha256sum -c -
+          (cd AppealPro_V1.3 && patch -p1 < /tmp/v201-fix1.patch)
 
       - name: Verify V2.0.1 recovery source contracts
         run: |
