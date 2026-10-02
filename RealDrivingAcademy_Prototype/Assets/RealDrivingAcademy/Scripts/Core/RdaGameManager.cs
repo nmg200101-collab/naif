@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using RealDrivingAcademy.Persistence;
 
 namespace RealDrivingAcademy.Core
@@ -41,6 +42,16 @@ namespace RealDrivingAcademy.Core
             persistence = GetComponent<RdaPersistenceService>();
             if (persistence == null)
                 persistence = gameObject.AddComponent<RdaPersistenceService>();
+        }
+
+        void Update()
+        {
+            if (!Input.GetKeyDown(KeyCode.Escape) || sceneLoader == null || sceneLoader.IsLoading)
+                return;
+
+            string active = SceneManager.GetActiveScene().name;
+            if (active != RdaSceneNames.Welcome && active != RdaSceneNames.MainMenu)
+                OpenScene(RdaSceneNames.MainMenu, GameFlowState.MainMenu);
         }
 
         public void SetFlowState(GameFlowState next)
