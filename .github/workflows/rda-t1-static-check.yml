@@ -1,0 +1,20 @@
+name: RDA T1 Static Check
+
+on:
+  push:
+    branches:
+      - rda-t1-foundation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout T1 branch
+        uses: actions/checkout@v4
+
+      - name: Verify T1 project structure
+        run: python3 Tools/t1_static_check.py
