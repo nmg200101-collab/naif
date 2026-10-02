@@ -1,0 +1,69 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  buildAndroid:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Unity license secret
+        shell: bash
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${UNITY_LICENSE:-}" ]; then
+            echo "UNITY_LICENSE secret is missing. Add it in Repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-2022.3.62f1-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-2022.3.62f1-
+
+      - name: Build Unity Android APK
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 2022.3.62f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildMethod: RealDrivingAcademy.EditorTools.AndroidBuild.BuildApk
+          allowDirtyBuild: true
+
+      - name: Verify APK output
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="Builds/Android/RealDrivingAcademy_Stage2.apk"
+          test -s "$APK"
+          mkdir -p artifact
+          cp "$APK" artifact/RealDrivingAcademy_Stage2.apk
+          sha256sum artifact/RealDrivingAcademy_Stage2.apk > artifact/RealDrivingAcademy_Stage2.sha256
+          file artifact/RealDrivingAcademy_Stage2.apk
+          ls -lh artifact/
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RealDrivingAcademy-Stage2-APK
+          path: artifact/*
+          if-no-files-found: error
+          retention-days: 14
