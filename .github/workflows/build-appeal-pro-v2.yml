@@ -1,4 +1,4 @@
-name: Build Appeal Pro V2 Doctor Mode Phase 1
+name: Build Appeal Pro V2.0.1 Verification Recovery
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
       - 'appeal-v20-doctor.patch.0.b64'
       - 'appeal-v20-doctor.patch.1.b64'
       - 'appeal-v20-phase1.patch.*.b64'
+      - 'appeal-v201-verification-recovery.patch.gz.b64'
       - '.github/workflows/build-appeal-pro-v2.yml'
   workflow_dispatch:
 
@@ -69,10 +70,20 @@ jobs:
           echo "26319515508f4afba1fbe81183ca9ff0ea26bd2adbfe810257549d9fa1e33794  /tmp/v20-phase1.patch" | sha256sum -c -
           (cd AppealPro_V1.3 && patch -p1 < /tmp/v20-phase1.patch)
 
-      - name: Verify Phase 1 source contracts
+      - name: Apply V2.0.1 verification recovery
         run: |
-          grep -q 'versionCode = 21' AppealPro_V1.3/app/build.gradle.kts
-          grep -q 'versionName = "2.0.0-phase1"' AppealPro_V1.3/app/build.gradle.kts
+          echo "202f4be37d9f350c824b0feb0316d8e5ad2034675199d7016ee895f864588919  appeal-v201-verification-recovery.patch.gz.b64" | sha256sum -c -
+          base64 -d appeal-v201-verification-recovery.patch.gz.b64 | gzip -d > /tmp/v201-verification-recovery.patch
+          echo "d4ad61766978e0d014774dcc2846f40ad1e166459700a99a07a61f802fd09a3f  /tmp/v201-verification-recovery.patch" | sha256sum -c -
+          (cd AppealPro_V1.3 && patch -p1 < /tmp/v201-verification-recovery.patch)
+
+      - name: Verify V2.0.1 recovery source contracts
+        run: |
+          grep -q 'versionCode = 22' AppealPro_V1.3/app/build.gradle.kts
+          grep -q 'versionName = "2.0.1-verification-recovery"' AppealPro_V1.3/app/build.gradle.kts
+          grep -q 'object VerificationRecoveryProtocol' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/VerificationRecoveryProtocol.kt
+          grep -q 'المسار الشائع — استعادة كود واتساب' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
+          grep -q 'WARP/1.1.1.1 اختبار اختياري لمسار الإنترنت فقط' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
           grep -q 'object ResponseRouter' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/ResponseRouter.kt
           grep -q 'object CaseStateMachine' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/CaseStateMachine.kt
           grep -q 'ACTION_REQUIRED' AppealPro_V1.3/app/src/main/java/com/appealpro/app/data/Models.kt
@@ -83,7 +94,7 @@ jobs:
           grep -q 'GuidedSupportFormCard' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
           grep -q 'متابعة الحل' AppealPro_V1.3/app/src/main/java/com/appealpro/app/ui/AppealProApp.kt
 
-      - name: Build Phase 1 beta and release
+      - name: Build V2.0.1 beta and release
         working-directory: AppealPro_V1.3
         run: |
           gradle --no-daemon :app:assembleDebug
@@ -95,32 +106,32 @@ jobs:
           RELEASE=$(find AppealPro_V1.3/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -n 1)
           test -s "$DEBUG"
           test -s "$RELEASE"
-          cp "$DEBUG" AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk
-          cp "$RELEASE" AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk
-          (cd AppealPro_V1.3 && zip -qr ../AppealPro_V2.0_Doctor_Phase1_Source.zip .)
-          sha256sum AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk AppealPro_V2.0_Doctor_Phase1_Source.zip
-          ls -lh AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk AppealPro_V2.0_Doctor_Phase1_Source.zip
+          cp "$DEBUG" AppealPro-V2.0.1-Verification-Recovery-BETA.apk
+          cp "$RELEASE" AppealPro-V2.0.1-Verification-Recovery-unsigned.apk
+          (cd AppealPro_V1.3 && zip -qr ../AppealPro_V2.0.1_Verification_Recovery_Source.zip .)
+          sha256sum AppealPro-V2.0.1-Verification-Recovery-BETA.apk AppealPro-V2.0.1-Verification-Recovery-unsigned.apk AppealPro_V2.0.1_Verification_Recovery_Source.zip
+          ls -lh AppealPro-V2.0.1-Verification-Recovery-BETA.apk AppealPro-V2.0.1-Verification-Recovery-unsigned.apk AppealPro_V2.0.1_Verification_Recovery_Source.zip
 
       - name: Upload beta
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-Phase1-BETA
-          path: AppealPro-V2.0-Doctor-Mode-Phase1-BETA.apk
+          name: AppealPro-V2.0.1-Verification-Recovery-BETA
+          path: AppealPro-V2.0.1-Verification-Recovery-BETA.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload unsigned release
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-Phase1-Unsigned
-          path: AppealPro-V2.0-Doctor-Mode-Phase1-unsigned.apk
+          name: AppealPro-V2.0.1-Verification-Recovery-Unsigned
+          path: AppealPro-V2.0.1-Verification-Recovery-unsigned.apk
           if-no-files-found: error
           retention-days: 30
 
       - name: Upload source
         uses: actions/upload-artifact@v4
         with:
-          name: AppealPro-V2.0-Doctor-Mode-Phase1-Source
-          path: AppealPro_V2.0_Doctor_Phase1_Source.zip
+          name: AppealPro-V2.0.1-Verification-Recovery-Source
+          path: AppealPro_V2.0.1_Verification_Recovery_Source.zip
           if-no-files-found: error
           retention-days: 30
