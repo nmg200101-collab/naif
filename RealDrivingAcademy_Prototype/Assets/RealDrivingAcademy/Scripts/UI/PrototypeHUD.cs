@@ -16,6 +16,7 @@ namespace RealDrivingAcademy.UI
         public Text scoreText;
         public Text lessonText;
         public Text warningText;
+        public Text systemStatusText;
         public Text driveDebugText;
         public bool showDriveDebug;
 
@@ -61,6 +62,22 @@ namespace RealDrivingAcademy.UI
                 if (gearText != null) gearText.text = car.selectedGear < 0 ? "R" : car.selectedGear == 0 ? "N" : car.selectedGear.ToString();
             }
             if (scoreText != null && violations != null) scoreText.text = "Score: " + violations.score;
+
+            if (systemStatusText != null && car != null)
+            {
+                if (input == null) input = car.GetComponent<CarInputState>();
+                if (systems == null) systems = car.GetComponent<CarSystems>();
+
+                string hb = input != null && input.handbrake ? "HB" : "";
+                string left = systems != null && systems.leftIndicator ? "LEFT" : "";
+                string right = systems != null && systems.rightIndicator ? "RIGHT" : "";
+                string hazards = systems != null && systems.hazardLights ? "HAZ" : "";
+                string lights = systems != null && (systems.lowBeams || systems.highBeams) ? "LIGHT" : "";
+                string abs = car.absActive ? "ABS" : "";
+                string tcs = car.tractionControlActive ? "TCS" : "";
+
+                systemStatusText.text = string.Join("  ", new[] { hb, left, right, hazards, lights, abs, tcs });
+            }
 
             if (driveDebugText != null && car != null)
             {
