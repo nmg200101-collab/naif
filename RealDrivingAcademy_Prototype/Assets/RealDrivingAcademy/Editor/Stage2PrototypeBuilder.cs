@@ -157,14 +157,14 @@ namespace RealDrivingAcademy.EditorTools
         static CarRefs CreateTrainingCar()
         {
             var root = new GameObject("TrainingSedan");
-            root.transform.position = new Vector3(0f,1.0f,-8f);
-            var rb=root.AddComponent<Rigidbody>(); rb.mass=1450f; rb.interpolation=RigidbodyInterpolation.Interpolate; rb.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic;
+            root.transform.position = new Vector3(0f,0.13f,-8f);
+            var rb=root.AddComponent<Rigidbody>(); rb.mass=1450f; rb.interpolation=RigidbodyInterpolation.Interpolate; rb.collisionDetectionMode=CollisionDetectionMode.ContinuousDynamic; rb.angularDrag=1.2f; rb.drag=.02f; rb.maxAngularVelocity=4f;
             var input=root.AddComponent<CarInputState>(); input.useKeyboardForPrototype=true; input.handbrake=true;
             var systems=root.AddComponent<CarSystems>();
             var car=root.AddComponent<RealisticCarController>();
             root.AddComponent<VehicleSafetyAssist>().car=car;
             var violations=root.AddComponent<DrivingViolationSystem>(); violations.car=car; violations.systems=systems;
-            var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
+            var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.centerOfMass=new Vector3(0f,.34f,-.05f); cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
             if (!AssetDatabase.IsValidFolder("Assets/RealDrivingAcademy/Configs")) AssetDatabase.CreateFolder("Assets/RealDrivingAcademy","Configs");
             const string cfgPath = "Assets/RealDrivingAcademy/Configs/TrainingSedan_Stage2.asset";
             if (AssetDatabase.LoadAssetAtPath<VehicleConfig>(cfgPath) != null) AssetDatabase.DeleteAsset(cfgPath);
@@ -172,6 +172,7 @@ namespace RealDrivingAcademy.EditorTools
             car.config=cfg;
 
             // Body shell
+            var chassis=root.AddComponent<BoxCollider>(); chassis.center=new Vector3(0f,.58f,0f); chassis.size=new Vector3(1.74f,.46f,3.72f);
             CreateChildCube(root.transform,"Floor",new Vector3(0,0.40f,0),new Vector3(1.9f,.22f,4.2f),bodyMat);
             CreateChildCube(root.transform,"Hood",new Vector3(0,0.80f,1.45f),new Vector3(1.85f,.35f,1.25f),bodyMat);
             CreateChildCube(root.transform,"Roof",new Vector3(0,1.65f,-.20f),new Vector3(1.75f,.14f,1.75f),bodyMat);
@@ -222,9 +223,10 @@ namespace RealDrivingAcademy.EditorTools
             CreateMirrors(root.transform);
 
             // Driver camera
-            var camGO=new GameObject("DriverCamera"); camGO.transform.SetParent(root.transform); camGO.transform.localPosition=new Vector3(-.47f,1.46f,-.38f); camGO.transform.localRotation=Quaternion.identity;
-            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=72f; cam.nearClipPlane=.04f; cam.tag="MainCamera"; camGO.AddComponent<AudioListener>();
-            var cc=camGO.AddComponent<DriverCameraController>(); cc.driverSeatAnchor=camGO.transform; cc.yawLimit=105f; cc.pitchLimit=35f;
+            var headAnchor=new GameObject("DriverHeadAnchor").transform; headAnchor.SetParent(root.transform); headAnchor.localPosition=new Vector3(-.47f,1.40f,-.52f); headAnchor.localRotation=Quaternion.identity;
+            var camGO=new GameObject("DriverCamera"); camGO.transform.SetParent(root.transform); camGO.transform.localPosition=headAnchor.localPosition; camGO.transform.localRotation=Quaternion.identity;
+            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=68f; cam.nearClipPlane=.08f; cam.tag="MainCamera"; camGO.AddComponent<AudioListener>();
+            var cc=camGO.AddComponent<DriverCameraController>(); cc.driverSeatAnchor=headAnchor; cc.yawLimit=105f; cc.pitchLimit=35f;
             // audio
             var aud=root.AddComponent<AudioSource>(); aud.spatialBlend=.6f;
             var pae=root.AddComponent<ProceduralEngineAudio>(); pae.car=car;
@@ -239,7 +241,7 @@ namespace RealDrivingAcademy.EditorTools
         struct WheelRef { public WheelCollider collider; public Transform mesh; }
         static WheelRef Wheel(Transform parent,string name,Vector3 lp)
         {
-            var cgo=new GameObject(name+"Collider"); cgo.transform.SetParent(parent); cgo.transform.localPosition=lp; var wc=cgo.AddComponent<WheelCollider>(); wc.radius=.34f; wc.mass=22f; wc.suspensionDistance=.20f; var sp=wc.suspensionSpring; sp.spring=33000f; sp.damper=4600f; sp.targetPosition=.48f; wc.suspensionSpring=sp;
+            var cgo=new GameObject(name+"Collider"); cgo.transform.SetParent(parent); cgo.transform.localPosition=lp; var wc=cgo.AddComponent<WheelCollider>(); wc.radius=.34f; wc.mass=22f; wc.suspensionDistance=.20f; wc.forceAppPointDistance=.12f; var sp=wc.suspensionSpring; sp.spring=35000f; sp.damper=4800f; sp.targetPosition=.50f; wc.suspensionSpring=sp; var ff=wc.forwardFriction; ff.stiffness=1.25f; wc.forwardFriction=ff; var sf=wc.sidewaysFriction; sf.stiffness=1.35f; wc.sidewaysFriction=sf;
             var mesh=GameObject.CreatePrimitive(PrimitiveType.Cylinder); mesh.name=name+"Wheel"; mesh.transform.SetParent(parent); mesh.transform.localPosition=lp; mesh.transform.localRotation=Quaternion.Euler(0,0,90); mesh.transform.localScale=new Vector3(.34f,.11f,.34f); mesh.GetComponent<Renderer>().sharedMaterial=darkMat; Object.DestroyImmediate(mesh.GetComponent<Collider>());
             return new WheelRef{collider=wc,mesh=mesh.transform};
         }
