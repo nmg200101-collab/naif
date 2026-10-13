@@ -27,6 +27,7 @@ namespace RealDrivingAcademy.Vehicle
         public int selectedGear = 0; // -1 Reverse, 0 Neutral, 1..N forward
         public float engineRpm;
         public float speedKph;
+        public float signedSpeedKph;
         public bool engineStalled;
 
         Rigidbody rb;
@@ -54,6 +55,7 @@ namespace RealDrivingAcademy.Vehicle
             if (config == null) return;
 
             speedKph = rb.velocity.magnitude * 3.6f;
+            signedSpeedKph = Vector3.Dot(rb.velocity, transform.forward) * 3.6f;
             UpdateEngineAndTransmission();
             ApplySteering();
             ApplyDriveTorque();
@@ -106,8 +108,11 @@ namespace RealDrivingAcademy.Vehicle
 
         void ApplySteering()
         {
-            float speed01 = Mathf.Clamp01(speedKph / Mathf.Max(1f, config.maxSpeedKph));
-            float assist = Mathf.Lerp(1f, config.steeringAssistAtTopSpeed, speed01);
+            float steerSpeed01 = Mathf.InverseLerp(
+                config.fullSteerUntilKph,
+                Mathf.Max(config.fullSteerUntilKph + 1f, config.reducedSteerAtKph),
+                speedKph);
+            float assist = Mathf.Lerp(1f, config.steeringAssistAtTopSpeed, steerSpeed01);
             float steer = input.steering * config.maxSteerAngle * assist;
 
             if (frontAxle.steering)
@@ -126,13 +131,25 @@ namespace RealDrivingAcademy.Vehicle
         {
             ClearMotorTorque(frontAxle);
             ClearMotorTorque(rearAxle);
-            if (!EngineRunning || selectedGear == 0 || speedKph >= config.maxSpeedKph) return;
+
+            if (!EngineRunning || selectedGear == 0 || input.handbrake) return;
+            if (selectedGear > 0 && speedKph >= config.maxSpeedKph) return;
+            if (selectedGear < 0 && speedKph >= config.maxReverseSpeedKph) return;
+
+            float effectiveThrottle = input.brake > 0.05f ? 0f : input.throttle;
+            if (effectiveThrottle <= 0.001f) return;
 
             float gearRatio = GetCurrentGearRatio();
             float rpm01 = Mathf.Clamp01(engineRpm / config.redlineRpm);
             float torqueCurve = config.torqueCurve.Evaluate(rpm01);
             float clutchEngagement = config.automaticTransmission ? 1f : (1f - input.clutch);
-            float engineTorque = config.maxEngineTorque * torqueCurve * input.throttle * clutchEngagement;
+
+            float launch01 = Mathf.InverseLerp(0f, Mathf.Max(1f, config.launchAssistEndKph), speedKph);
+            float launchMultiplier = Mathf.Lerp(config.launchTorqueMultiplier, 1f, launch01);
+            if (selectedGear < 0)
+                launchMultiplier *= config.reverseTorqueMultiplier;
+
+            float engineTorque = config.maxEngineTorque * torqueCurve * effectiveThrottle * clutchEngagement * launchMultiplier;
             float wheelTorque = engineTorque * gearRatio * config.finalDriveRatio * config.drivetrainEfficiency;
 
             int poweredWheels = CountPoweredWheels();
@@ -155,6 +172,9 @@ namespace RealDrivingAcademy.Vehicle
         {
             if (wheel == null) return;
             float brake = serviceInput * config.serviceBrakeTorque;
+
+            if (serviceInput < 0.01f && selectedGear != 0 && input.throttle < 0.01f && !input.handbrake)
+                brake = config.coastBrakeTorque;
 
             if (config.absEnabled && serviceInput > 0.1f && wheel.GetGroundHit(out WheelHit hit))
             {
@@ -226,14 +246,22 @@ namespace RealDrivingAcademy.Vehicle
             selectedGear = Mathf.Max(selectedGear - 1, -1);
         }
 
-        public void SetGear(int gear)
+        public bool SetGear(int gear)
         {
-            if (config.automaticTransmission)
-            {
-                selectedGear = Mathf.Clamp(gear, -1, 1);
-                return;
-            }
-            selectedGear = Mathf.Clamp(gear, -1, config.forwardGearRatios.Length);
+            if (config == null) return false;
+
+            int requested = config.automaticTransmission
+                ? Mathf.Clamp(gear, -1, 1)
+                : Mathf.Clamp(gear, -1, config.forwardGearRatios.Length);
+
+            if (requested < 0 && signedSpeedKph > config.safeDirectionChangeSpeedKph)
+                return false;
+
+            if (requested > 0 && signedSpeedKph < -config.safeDirectionChangeSpeedKph)
+                return false;
+
+            selectedGear = requested;
+            return true;
         }
 
         public void RestartEngineAfterStall()
