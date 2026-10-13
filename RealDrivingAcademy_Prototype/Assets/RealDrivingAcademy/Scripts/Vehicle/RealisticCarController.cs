@@ -24,7 +24,7 @@ namespace RealDrivingAcademy.Vehicle
         public Axle rearAxle;
 
         [Header("Runtime")]
-        public int selectedGear = 1; // -1 Reverse, 0 Neutral, 1..N forward
+        public int selectedGear = 0; // -1 Reverse, 0 Neutral, 1..N forward
         public float engineRpm;
         public float speedKph;
         public bool engineStalled;
