@@ -66,6 +66,9 @@ checks = {
     "system status HUD": 'SystemsStatus' in builder and 'systemStatusText' in (RDA / "Scripts" / "UI" / "PrototypeHUD.cs").read_text(encoding="utf-8"),
     "ABS runtime flag": 'public bool absActive;' in controller and 'absActive = true;' in controller,
     "TCS runtime flag": 'public bool tractionControlActive;' in controller and 'tractionControlActive = true;' in controller,
+    "safe recovery reset": 'ResetDrivingInputs' in inputs and 'lastSafePosition' in (RDA / "Scripts" / "Vehicle" / "VehicleSafetyAssist.cs").read_text(encoding="utf-8"),
+    "rollover recovery": 'upsideDownSecondsBeforeReset' in (RDA / "Scripts" / "Vehicle" / "VehicleSafetyAssist.cs").read_text(encoding="utf-8"),
+    "reset button": '"RESET"' in builder and 'safetyAssist.ResetVehicle' in builder,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
@@ -81,6 +84,6 @@ for path in required:
         print("Unbalanced braces:", path)
         sys.exit(1)
 
-print("RDA T2-8 static checks PASSED")
+print("RDA T2-9 static checks PASSED")
 for name in checks:
     print(" -", name)
