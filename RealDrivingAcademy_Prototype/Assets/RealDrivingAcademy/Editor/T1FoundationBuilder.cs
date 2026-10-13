@@ -288,17 +288,7 @@ namespace RealDrivingAcademy.EditorTools
 
         static Font GetBuiltinUiFont()
         {
-            Font font = null;
-            try { font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); }
-            catch { }
-
-            if (font == null)
-            {
-                try { font = Resources.GetBuiltinResource<Font>("Arial.ttf"); }
-                catch { }
-            }
-
-            return font;
+            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         static void Stretch(RectTransform rect)
