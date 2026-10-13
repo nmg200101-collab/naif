@@ -14,32 +14,96 @@ namespace RealDrivingAcademy.Vehicle
         public float steeringResponse = 5f;
         public float pedalResponse = 8f;
 
-        float targetSteer;
-        float targetThrottle;
-        float targetBrake;
-        float targetClutch;
+        float keyboardSteering;
+        float keyboardThrottle;
+        float keyboardBrake;
+        float keyboardClutch;
+
+        float uiSteering;
+        float uiThrottle;
+        float uiBrake;
+        float uiClutch;
 
         void Update()
         {
-            if (!useKeyboardForPrototype || Application.isMobilePlatform) return;
-
-            targetSteer = Input.GetAxisRaw("Horizontal");
-            targetThrottle = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1f : 0f;
-            targetBrake = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1f : 0f;
-            targetClutch = Input.GetKey(KeyCode.LeftShift) ? 1f : 0f;
-            if (Input.GetKeyDown(KeyCode.Space)) handbrake = !handbrake;
-
-            steering = Mathf.MoveTowards(steering, targetSteer, steeringResponse * Time.deltaTime);
-            throttle = Mathf.MoveTowards(throttle, targetThrottle, pedalResponse * Time.deltaTime);
-            brake = Mathf.MoveTowards(brake, targetBrake, pedalResponse * Time.deltaTime);
-            clutch = Mathf.MoveTowards(clutch, targetClutch, pedalResponse * Time.deltaTime);
+            UpdateKeyboardInput();
+            MergeInputs();
         }
 
-        // Mobile UI hooks
-        public void SetSteering(float value) => steering = Mathf.Clamp(value, -1f, 1f);
-        public void SetThrottle(float value) => throttle = Mathf.Clamp01(value);
-        public void SetBrake(float value) => brake = Mathf.Clamp01(value);
-        public void SetClutch(float value) => clutch = Mathf.Clamp01(value);
-        public void SetHandbrake(bool value) => handbrake = value;
+        void UpdateKeyboardInput()
+        {
+            float targetSteer = 0f;
+            float targetThrottle = 0f;
+            float targetBrake = 0f;
+            float targetClutch = 0f;
+
+            if (useKeyboardForPrototype && !Application.isMobilePlatform)
+            {
+                targetSteer = Input.GetAxisRaw("Horizontal");
+                targetThrottle = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1f : 0f;
+                targetBrake = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1f : 0f;
+                targetClutch = Input.GetKey(KeyCode.LeftShift) ? 1f : 0f;
+
+                if (Input.GetKeyDown(KeyCode.Space))
+                    handbrake = !handbrake;
+            }
+
+            keyboardSteering = Mathf.MoveTowards(
+                keyboardSteering,
+                targetSteer,
+                steeringResponse * Time.deltaTime);
+
+            keyboardThrottle = Mathf.MoveTowards(
+                keyboardThrottle,
+                targetThrottle,
+                pedalResponse * Time.deltaTime);
+
+            keyboardBrake = Mathf.MoveTowards(
+                keyboardBrake,
+                targetBrake,
+                pedalResponse * Time.deltaTime);
+
+            keyboardClutch = Mathf.MoveTowards(
+                keyboardClutch,
+                targetClutch,
+                pedalResponse * Time.deltaTime);
+        }
+
+        void MergeInputs()
+        {
+            steering = Mathf.Abs(uiSteering) > 0.001f
+                ? uiSteering
+                : keyboardSteering;
+
+            throttle = Mathf.Max(uiThrottle, keyboardThrottle);
+            brake = Mathf.Max(uiBrake, keyboardBrake);
+            clutch = Mathf.Max(uiClutch, keyboardClutch);
+        }
+
+        // UI / mobile hooks. These no longer get overwritten by keyboard polling.
+        public void SetSteering(float value)
+        {
+            uiSteering = Mathf.Clamp(value, -1f, 1f);
+        }
+
+        public void SetThrottle(float value)
+        {
+            uiThrottle = Mathf.Clamp01(value);
+        }
+
+        public void SetBrake(float value)
+        {
+            uiBrake = Mathf.Clamp01(value);
+        }
+
+        public void SetClutch(float value)
+        {
+            uiClutch = Mathf.Clamp01(value);
+        }
+
+        public void SetHandbrake(bool value)
+        {
+            handbrake = value;
+        }
     }
 }
