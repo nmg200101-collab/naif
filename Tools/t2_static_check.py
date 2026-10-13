@@ -9,6 +9,7 @@ required = [
     RDA / "Scripts" / "Vehicle" / "VehicleConfig.cs",
     RDA / "Scripts" / "Vehicle" / "CarInputState.cs",
     RDA / "Scripts" / "Vehicle" / "RealisticCarController.cs",
+    RDA / "Scripts" / "Mobile" / "HoldHandbrakeButton.cs",
 ]
 
 for path in required:
@@ -20,8 +21,10 @@ builder = (RDA / "Editor" / "Stage2PrototypeBuilder.cs").read_text(encoding="utf
 config = (RDA / "Scripts" / "Vehicle" / "VehicleConfig.cs").read_text(encoding="utf-8")
 inputs = (RDA / "Scripts" / "Vehicle" / "CarInputState.cs").read_text(encoding="utf-8")
 controller = (RDA / "Scripts" / "Vehicle" / "RealisticCarController.cs").read_text(encoding="utf-8")
+handbrake = (RDA / "Scripts" / "Mobile" / "HoldHandbrakeButton.cs").read_text(encoding="utf-8")
 
 checks = {
+    # T2-5 stability
     "low spawn height": 'root.transform.position = new Vector3(0f,0.13f,-8f)' in builder,
     "chassis collider": 'root.AddComponent<BoxCollider>()' in builder,
     "stable rigidbody": 'rb.angularDrag=1.2f' in builder and 'rb.maxAngularVelocity=4f' in builder,
@@ -31,17 +34,36 @@ checks = {
     "suspension tune": 'sp.spring=35000f' in builder and 'sp.damper=4800f' in builder,
     "friction tune": 'ff.stiffness=1.25f' in builder and 'sf.stiffness=1.35f' in builder,
     "correct COM": 'new Vector3(0f, 0.34f, -0.05f)' in config,
-    "handbrake toggle": 'handbrake = !handbrake' in inputs,
+    "keyboard handbrake toggle": 'handbrake = !handbrake' in inputs,
     "neutral start": 'public int selectedGear = 0;' in controller,
+
+    # T2-6 drivability
+    "signed speed": 'signedSpeedKph = Vector3.Dot(rb.velocity, transform.forward) * 3.6f' in controller,
+    "speed adaptive steering": 'config.fullSteerUntilKph' in controller and 'config.reducedSteerAtKph' in controller,
+    "brake cuts throttle": 'float effectiveThrottle = input.brake > 0.05f ? 0f : input.throttle;' in controller,
+    "handbrake cuts drive torque": 'selectedGear == 0 || input.handbrake' in controller,
+    "launch torque limiter": 'config.launchTorqueMultiplier' in controller and 'config.launchAssistEndKph' in controller,
+    "reverse torque limiter": 'config.reverseTorqueMultiplier' in controller,
+    "reverse speed cap": 'config.maxReverseSpeedKph' in controller,
+    "coast drag": 'brake = config.coastBrakeTorque;' in controller,
+    "safe direction change": 'config.safeDirectionChangeSpeedKph' in controller and 'public bool SetGear(int gear)' in controller,
+    "handbrake ui sync": 'latched = input.handbrake;' in handbrake and 'latched = !input.handbrake;' in handbrake,
+    "prototype T2-6 tuning": 'cfg.fullSteerUntilKph=18f' in builder and 'cfg.launchTorqueMultiplier=.62f' in builder,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
 if failed:
-    print("T2-5 checks FAILED:")
+    print("T2 checks FAILED:")
     for name in failed:
         print(" -", name)
     sys.exit(1)
 
-print("RDA T2-5 static checks PASSED")
+for path in required:
+    text = path.read_text(encoding="utf-8")
+    if text.count("{") != text.count("}"):
+        print("Unbalanced braces:", path)
+        sys.exit(1)
+
+print("RDA T2-6 static checks PASSED")
 for name in checks:
     print(" -", name)
