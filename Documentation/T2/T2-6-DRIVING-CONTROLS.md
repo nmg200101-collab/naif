@@ -1,6 +1,6 @@
 # RDA T2-6 Driving Controls
 
-Status: IMPLEMENTED — awaiting Unity runtime/device gate.
+Status: PASSED — Unity runtime/device gate completed successfully.
 
 ## Goal
 Make the training sedan predictable and controllable at low and medium speeds before visual polish.
@@ -38,3 +38,10 @@ T2-6 passes only if:
 7. Reverse remains controllable and does not accelerate indefinitely.
 8. Handbrake state remains synchronized between keyboard and UI.
 9. Console stays at 0 errors.
+
+
+## Runtime result
+- Vehicle moves correctly after ignition, D selection and handbrake release.
+- Brake and steering tested successfully.
+- Gear/handbrake/input chain confirmed with live drivetrain diagnostics.
+- Console remained free of errors during the accepted test.
