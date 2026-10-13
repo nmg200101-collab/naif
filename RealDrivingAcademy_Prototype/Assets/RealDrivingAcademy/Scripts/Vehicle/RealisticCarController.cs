@@ -29,6 +29,8 @@ namespace RealDrivingAcademy.Vehicle
         public float speedKph;
         public float signedSpeedKph;
         public bool engineStalled;
+        public bool absActive;
+        public bool tractionControlActive;
 
         Rigidbody rb;
         CarInputState input;
@@ -56,6 +58,8 @@ namespace RealDrivingAcademy.Vehicle
 
             speedKph = rb.velocity.magnitude * 3.6f;
             signedSpeedKph = Vector3.Dot(rb.velocity, transform.forward) * 3.6f;
+            absActive = false;
+            tractionControlActive = false;
             UpdateEngineAndTransmission();
             ApplySteering();
             ApplyDriveTorque();
@@ -179,7 +183,10 @@ namespace RealDrivingAcademy.Vehicle
             if (config.absEnabled && serviceInput > 0.1f && wheel.GetGroundHit(out WheelHit hit))
             {
                 if (Mathf.Abs(hit.forwardSlip) > config.absSlipThreshold)
+                {
+                    absActive = true;
                     brake *= 0.35f;
+                }
             }
 
             if (input.handbrake && handbrakeAxle)
@@ -200,6 +207,7 @@ namespace RealDrivingAcademy.Vehicle
             if (!config.tractionControlEnabled || !wheel.GetGroundHit(out WheelHit hit)) return torque;
             float slip = Mathf.Abs(hit.forwardSlip);
             if (slip <= config.tractionSlipThreshold) return torque;
+            tractionControlActive = true;
             return torque * Mathf.Clamp01(config.tractionSlipThreshold / Mathf.Max(0.001f, slip));
         }
 
