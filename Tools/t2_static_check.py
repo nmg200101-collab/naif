@@ -53,6 +53,11 @@ checks = {
     "handbrake ui sync": 'latched = input.handbrake;' in handbrake and 'latched = !input.handbrake;' in handbrake,
     "prototype T2-6 tuning": 'cfg.fullSteerUntilKph=18f' in builder and 'cfg.launchTorqueMultiplier=.62f' in builder,
     "drive diagnostic HUD": 'DriveDebug' in builder and 'driveDebugText' in (RDA / "Scripts" / "UI" / "PrototypeHUD.cs").read_text(encoding="utf-8"),
+    "camera rig": 'VehicleCameraRig' in builder and (RDA / "Scripts" / "Vehicle" / "VehicleCameraRig.cs").exists(),
+    "driver camera culling": 'cam.cullingMask &= ~(1 << 2)' in builder,
+    "chase camera": 'ChaseCamera' in builder and 'cameraRig.chaseCamera=chaseCam' in builder,
+    "camera toggle button": '"CAM"' in builder and 'cameraRig.ToggleCamera' in builder,
+    "visual lamps": 'LeftHeadlamp' in builder and 'RightTailLamp' in builder,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
@@ -68,6 +73,6 @@ for path in required:
         print("Unbalanced braces:", path)
         sys.exit(1)
 
-print("RDA T2-6 static checks PASSED")
+print("RDA T2-7 static checks PASSED")
 for name in checks:
     print(" -", name)
