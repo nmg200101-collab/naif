@@ -29,7 +29,7 @@ namespace RealDrivingAcademy.Vehicle
 
         [Header("Chassis")]
         [Min(500f)] public float mass = 1450f;
-        public Vector3 centerOfMass = new Vector3(0f, -0.45f, 0.05f);
+        public Vector3 centerOfMass = new Vector3(0f, 0.34f, -0.05f);
         [Min(1f)] public float maxSteerAngle = 34f;
         [Min(1f)] public float serviceBrakeTorque = 3300f;
         [Min(1f)] public float handbrakeTorque = 5200f;
