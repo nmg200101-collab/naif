@@ -27,7 +27,7 @@ namespace RealDrivingAcademy.Vehicle
             targetThrottle = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) ? 1f : 0f;
             targetBrake = Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) ? 1f : 0f;
             targetClutch = Input.GetKey(KeyCode.LeftShift) ? 1f : 0f;
-            handbrake = Input.GetKey(KeyCode.Space);
+            if (Input.GetKeyDown(KeyCode.Space)) handbrake = !handbrake;
 
             steering = Mathf.MoveTowards(steering, targetSteer, steeringResponse * Time.deltaTime);
             throttle = Mathf.MoveTowards(throttle, targetThrottle, pedalResponse * Time.deltaTime);
