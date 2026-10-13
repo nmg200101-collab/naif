@@ -16,6 +16,19 @@ namespace RealDrivingAcademy.UI
         public Text scoreText;
         public Text lessonText;
         public Text warningText;
+        public Text driveDebugText;
+
+        CarInputState input;
+        CarSystems systems;
+
+        void Awake()
+        {
+            if (car != null)
+            {
+                input = car.GetComponent<CarInputState>();
+                systems = car.GetComponent<CarSystems>();
+            }
+        }
 
         void OnEnable()
         {
@@ -38,6 +51,45 @@ namespace RealDrivingAcademy.UI
                 if (gearText != null) gearText.text = car.selectedGear < 0 ? "R" : car.selectedGear == 0 ? "N" : car.selectedGear.ToString();
             }
             if (scoreText != null && violations != null) scoreText.text = "Score: " + violations.score;
+
+            if (driveDebugText != null && car != null)
+            {
+                if (input == null) input = car.GetComponent<CarInputState>();
+                if (systems == null) systems = car.GetComponent<CarSystems>();
+
+                int grounded = 0;
+                if (car.frontAxle != null)
+                {
+                    if (car.frontAxle.leftCollider != null && car.frontAxle.leftCollider.isGrounded) grounded++;
+                    if (car.frontAxle.rightCollider != null && car.frontAxle.rightCollider.isGrounded) grounded++;
+                }
+                if (car.rearAxle != null)
+                {
+                    if (car.rearAxle.leftCollider != null && car.rearAxle.leftCollider.isGrounded) grounded++;
+                    if (car.rearAxle.rightCollider != null && car.rearAxle.rightCollider.isGrounded) grounded++;
+                }
+
+                float motorTorque = 0f;
+                if (car.frontAxle != null)
+                {
+                    if (car.frontAxle.leftCollider != null) motorTorque += car.frontAxle.leftCollider.motorTorque;
+                    if (car.frontAxle.rightCollider != null) motorTorque += car.frontAxle.rightCollider.motorTorque;
+                }
+                if (car.rearAxle != null)
+                {
+                    if (car.rearAxle.leftCollider != null) motorTorque += car.rearAxle.leftCollider.motorTorque;
+                    if (car.rearAxle.rightCollider != null) motorTorque += car.rearAxle.rightCollider.motorTorque;
+                }
+
+                string ignition = systems != null && systems.ignitionOn ? "ON" : "OFF";
+                string handbrake = input != null && input.handbrake ? "ON" : "OFF";
+                float gas = input != null ? input.throttle : -1f;
+                float brake = input != null ? input.brake : -1f;
+                string gear = car.selectedGear < 0 ? "R" : car.selectedGear == 0 ? "N" : "D";
+
+                driveDebugText.text =
+                    $"IGN:{ignition}  GEAR:{gear}  HB:{handbrake}  GAS:{gas:0.00}  BRAKE:{brake:0.00}  GROUND:{grounded}/4  TORQUE:{motorTorque:0}";
+            }
         }
 
         void SetLesson(string text)
