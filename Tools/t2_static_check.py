@@ -58,6 +58,14 @@ checks = {
     "chase camera": 'ChaseCamera' in builder and 'cameraRig.chaseCamera=chaseCam' in builder,
     "camera toggle button": '"CAM"' in builder and 'cameraRig.ToggleCamera' in builder,
     "visual lamps": 'LeftHeadlamp' in builder and 'RightTailLamp' in builder,
+    "vehicle light visuals": (RDA / "Scripts" / "Vehicle" / "VehicleLightVisuals.cs").exists() and 'VehicleLightVisuals' in builder,
+    "functional indicators": 'LeftFrontIndicator' in builder and 'RightRearIndicator' in builder,
+    "functional reverse lamps": 'LeftReverseLamp' in builder and 'RightReverseLamp' in builder,
+    "low beam spotlights": 'LeftLowBeam' in builder and 'RightLowBeam' in builder,
+    "hazard button": 'CockpitControl.ControlAction.Hazards' in builder and '"HAZ"' in builder,
+    "system status HUD": 'SystemsStatus' in builder and 'systemStatusText' in (RDA / "Scripts" / "UI" / "PrototypeHUD.cs").read_text(encoding="utf-8"),
+    "ABS runtime flag": 'public bool absActive;' in controller and 'absActive = true;' in controller,
+    "TCS runtime flag": 'public bool tractionControlActive;' in controller and 'tractionControlActive = true;' in controller,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
@@ -73,6 +81,6 @@ for path in required:
         print("Unbalanced braces:", path)
         sys.exit(1)
 
-print("RDA T2-7 static checks PASSED")
+print("RDA T2-8 static checks PASSED")
 for name in checks:
     print(" -", name)
