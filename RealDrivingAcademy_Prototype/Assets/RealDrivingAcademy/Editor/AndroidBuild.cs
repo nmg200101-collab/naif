@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using System.IO;
 using System;
