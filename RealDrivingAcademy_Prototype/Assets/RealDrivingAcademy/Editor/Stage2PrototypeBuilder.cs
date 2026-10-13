@@ -149,6 +149,7 @@ namespace RealDrivingAcademy.EditorTools
             public DrivingViolationSystem violations;
             public Camera camera;
             public VehicleCameraRig cameraRig;
+            public VehicleSafetyAssist safetyAssist;
             public Transform steering;
             public Transform accelerator, brake, clutch, shifter;
             public Transform speedNeedle, rpmNeedle;
@@ -163,7 +164,7 @@ namespace RealDrivingAcademy.EditorTools
             var input=root.AddComponent<CarInputState>(); input.useKeyboardForPrototype=true; input.handbrake=true;
             var systems=root.AddComponent<CarSystems>();
             var car=root.AddComponent<RealisticCarController>();
-            root.AddComponent<VehicleSafetyAssist>().car=car;
+            var safetyAssist=root.AddComponent<VehicleSafetyAssist>(); safetyAssist.car=car;
             var violations=root.AddComponent<DrivingViolationSystem>(); violations.car=car; violations.systems=systems;
             var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.centerOfMass=new Vector3(0f,.34f,-.05f); cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.fullSteerUntilKph=18f; cfg.reducedSteerAtKph=80f; cfg.steeringAssistAtTopSpeed=.38f; cfg.launchTorqueMultiplier=.62f; cfg.reverseTorqueMultiplier=.55f; cfg.launchAssistEndKph=28f; cfg.maxReverseSpeedKph=25f; cfg.safeDirectionChangeSpeedKph=3f; cfg.coastBrakeTorque=110f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
             if (!AssetDatabase.IsValidFolder("Assets/RealDrivingAcademy/Configs")) AssetDatabase.CreateFolder("Assets/RealDrivingAcademy","Configs");
@@ -281,7 +282,7 @@ namespace RealDrivingAcademy.EditorTools
             var pae=root.AddComponent<ProceduralEngineAudio>(); pae.car=car;
 
             systems.ignitionOn=false; systems.seatBeltFastened=false;
-            return new CarRefs{gameObject=root,car=car,input=input,systems=systems,violations=violations,camera=cam,cameraRig=cameraRig,steering=steerRoot,accelerator=accel,brake=brake,clutch=clutch,shifter=shifter.transform,speedNeedle=speedN,rpmNeedle=rpmN,leftWiper=lw,rightWiper=rw};
+            return new CarRefs{gameObject=root,car=car,input=input,systems=systems,violations=violations,camera=cam,cameraRig=cameraRig,safetyAssist=safetyAssist,steering=steerRoot,accelerator=accel,brake=brake,clutch=clutch,shifter=shifter.transform,speedNeedle=speedN,rpmNeedle=rpmN,leftWiper=lw,rightWiper=rw};
         }
 
         static void AddPedal(GameObject root,CarInputState input,Transform t,PedalVisual.PedalType type)
@@ -365,6 +366,7 @@ namespace RealDrivingAcademy.EditorTools
             CreateSystemButton(canvas.transform,"LIGHT",new Vector2(-620,340),CockpitControl.ControlAction.LowBeams,refs);
             CreateSystemButton(canvas.transform,"WIPER",new Vector2(-480,340),CockpitControl.ControlAction.Wipers,refs);
             var camButton=Button(canvas.transform,"Camera",new Vector2(-790,340),new Vector2(125,72),"CAM"); Anchor(camButton.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); if(refs.cameraRig!=null) UnityEventTools.AddPersistentListener(camButton.onClick,refs.cameraRig.ToggleCamera);
+            var resetButton=Button(canvas.transform,"ResetVehicle",new Vector2(-940,340),new Vector2(135,72),"RESET"); Anchor(resetButton.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); if(refs.safetyAssist!=null) UnityEventTools.AddPersistentListener(resetButton.onClick,refs.safetyAssist.ResetVehicle);
             var hb=Button(canvas.transform,"Handbrake",new Vector2(-620,430),new Vector2(260,75),"HANDBRAKE"); Anchor(hb.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); var hbc=hb.gameObject.AddComponent<HoldHandbrakeButton>(); hbc.input=refs.input; hbc.latchMode=true;
 
             // Gears
