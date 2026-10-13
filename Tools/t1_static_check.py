@@ -59,6 +59,11 @@ for name in ["Welcome", "MainMenu", "TrainingMenu", "TestMenu", "Garage", "Progr
         print("Missing scene name:", name)
         sys.exit(1)
 
+stage2_builder = (RDA / "Editor" / "Stage2PrototypeBuilder.cs").read_text(encoding="utf-8")
+if "AddComponent<AudioListener>()" not in stage2_builder:
+    print("Driver camera is missing AudioListener")
+    sys.exit(1)
+
 builder = (RDA / "Editor" / "T1FoundationBuilder.cs").read_text(encoding="utf-8")
 for token in ["BuildAllScenes", "EditorBuildSettings.scenes", "Stage2PrototypeBuilder.BuildScene"]:
     if token not in builder:
