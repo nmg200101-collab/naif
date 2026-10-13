@@ -52,6 +52,7 @@ checks = {
     "safe direction change": 'config.safeDirectionChangeSpeedKph' in controller and 'public bool SetGear(int gear)' in controller,
     "handbrake ui sync": 'latched = input.handbrake;' in handbrake and 'latched = !input.handbrake;' in handbrake,
     "prototype T2-6 tuning": 'cfg.fullSteerUntilKph=18f' in builder and 'cfg.launchTorqueMultiplier=.62f' in builder,
+    "drive diagnostic HUD": 'DriveDebug' in builder and 'driveDebugText' in (RDA / "Scripts" / "UI" / "PrototypeHUD.cs").read_text(encoding="utf-8"),
 }
 
 failed = [name for name, ok in checks.items() if not ok]
