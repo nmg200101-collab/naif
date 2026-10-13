@@ -223,7 +223,7 @@ namespace RealDrivingAcademy.EditorTools
 
             // Driver camera
             var camGO=new GameObject("DriverCamera"); camGO.transform.SetParent(root.transform); camGO.transform.localPosition=new Vector3(-.47f,1.46f,-.38f); camGO.transform.localRotation=Quaternion.identity;
-            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=72f; cam.nearClipPlane=.04f; cam.tag="MainCamera";
+            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=72f; cam.nearClipPlane=.04f; cam.tag="MainCamera"; camGO.AddComponent<AudioListener>();
             var cc=camGO.AddComponent<DriverCameraController>(); cc.driverSeatAnchor=camGO.transform; cc.yawLimit=105f; cc.pitchLimit=35f;
             // audio
             var aud=root.AddComponent<AudioSource>(); aud.spatialBlend=.6f;
