@@ -295,7 +295,8 @@ namespace RealDrivingAcademy.EditorTools
             var score=Text(canvas.transform,"Score",new Vector2(-20,-20),new Vector2(240,72),30,TextAnchor.MiddleRight,"Score: 100"); Anchor(score.rectTransform,new Vector2(1,1),new Vector2(1,1));
             var lesson=Text(canvas.transform,"Lesson",new Vector2(0,-100),new Vector2(900,68),28,TextAnchor.MiddleCenter,"Driving lesson"); Anchor(lesson.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var warning=Text(canvas.transform,"Warning",new Vector2(0,-170),new Vector2(900,62),26,TextAnchor.MiddleCenter,""); Anchor(warning.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
-            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning;
+            var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-88),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1));
+            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning; hud.driveDebugText=driveDebug;
 
             // Steering wheel touch area
             var steering=Panel(canvas.transform,"Steering",new Vector2(60,50),new Vector2(420,420),new Color(0.08f,0.08f,0.08f,.55f)); Anchor(steering,new Vector2(0,0),new Vector2(0,0));
