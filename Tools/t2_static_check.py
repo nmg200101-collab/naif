@@ -35,6 +35,9 @@ checks = {
     "friction tune": 'ff.stiffness=1.25f' in builder and 'sf.stiffness=1.35f' in builder,
     "correct COM": 'new Vector3(0f, 0.34f, -0.05f)' in config,
     "keyboard handbrake toggle": 'handbrake = !handbrake' in inputs,
+    "hybrid throttle input": 'uiThrottle' in inputs and 'Mathf.Max(uiThrottle, keyboardThrottle)' in inputs,
+    "hybrid brake input": 'uiBrake' in inputs and 'Mathf.Max(uiBrake, keyboardBrake)' in inputs,
+    "hybrid steering input": 'uiSteering' in inputs and 'keyboardSteering' in inputs,
     "neutral start": 'public int selectedGear = 0;' in controller,
 
     # T2-6 drivability
