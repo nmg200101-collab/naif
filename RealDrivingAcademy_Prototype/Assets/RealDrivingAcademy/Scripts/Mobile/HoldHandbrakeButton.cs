@@ -12,7 +12,9 @@ namespace RealDrivingAcademy.Mobile
 
         void Start()
         {
-            if (input != null) input.SetHandbrake(latched);
+            if (input == null) return;
+            latched = input.handbrake;
+            input.SetHandbrake(latched);
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -20,7 +22,7 @@ namespace RealDrivingAcademy.Mobile
             if (input == null) return;
             if (latchMode)
             {
-                latched = !latched;
+                latched = !input.handbrake;
                 input.SetHandbrake(latched);
             }
             else input.SetHandbrake(true);
