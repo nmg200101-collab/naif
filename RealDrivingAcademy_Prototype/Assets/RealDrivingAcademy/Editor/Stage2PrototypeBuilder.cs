@@ -334,7 +334,7 @@ namespace RealDrivingAcademy.EditorTools
         { var go=new GameObject(name); go.transform.SetParent(parent,false); var rt=go.AddComponent<RectTransform>(); rt.sizeDelta=size; rt.anchoredPosition=pos; var img=go.AddComponent<Image>(); img.color=color; return rt; }
 
         static Text Text(Transform parent,string name,Vector2 pos,Vector2 size,int fontSize,TextAnchor anchor,string content)
-        { var go=new GameObject(name); go.transform.SetParent(parent,false); var rt=go.AddComponent<RectTransform>(); rt.sizeDelta=size; rt.anchoredPosition=pos; var t=go.AddComponent<Text>(); t.font=Resources.GetBuiltinResource<Font>("Arial.ttf"); t.fontSize=fontSize; t.alignment=anchor; t.color=Color.white; t.text=content; t.raycastTarget=false; return t; }
+        { var go=new GameObject(name); go.transform.SetParent(parent,false); var rt=go.AddComponent<RectTransform>(); rt.sizeDelta=size; rt.anchoredPosition=pos; var t=go.AddComponent<Text>(); t.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); t.fontSize=fontSize; t.alignment=anchor; t.color=Color.white; t.text=content; t.raycastTarget=false; return t; }
 
         static void Anchor(RectTransform rt,Vector2 min,Vector2 max){ rt.anchorMin=min; rt.anchorMax=max; rt.pivot=min; }
 
