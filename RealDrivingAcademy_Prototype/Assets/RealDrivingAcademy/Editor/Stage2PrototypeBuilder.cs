@@ -195,10 +195,31 @@ namespace RealDrivingAcademy.EditorTools
 
             CreateChildCube(root.transform,"FrontBumper",new Vector3(0,.58f,2.08f),new Vector3(1.78f,.18f,.16f),darkMat);
             CreateChildCube(root.transform,"RearBumper",new Vector3(0,.60f,-2.02f),new Vector3(1.78f,.18f,.16f),darkMat);
-            CreateChildCube(root.transform,"LeftHeadlamp",new Vector3(-.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat);
-            CreateChildCube(root.transform,"RightHeadlamp",new Vector3(.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat);
-            CreateChildCube(root.transform,"LeftTailLamp",new Vector3(-.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat);
-            CreateChildCube(root.transform,"RightTailLamp",new Vector3(.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat);
+            var leftHeadlamp=CreateChildCube(root.transform,"LeftHeadlamp",new Vector3(-.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat).GetComponent<Renderer>();
+            var rightHeadlamp=CreateChildCube(root.transform,"RightHeadlamp",new Vector3(.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat).GetComponent<Renderer>();
+            var leftTailLamp=CreateChildCube(root.transform,"LeftTailLamp",new Vector3(-.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat).GetComponent<Renderer>();
+            var rightTailLamp=CreateChildCube(root.transform,"RightTailLamp",new Vector3(.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat).GetComponent<Renderer>();
+
+            var leftFrontIndicator=CreateChildCube(root.transform,"LeftFrontIndicator",new Vector3(-.84f,.78f,2.13f),new Vector3(.14f,.12f,.05f),yellowMat).GetComponent<Renderer>();
+            var rightFrontIndicator=CreateChildCube(root.transform,"RightFrontIndicator",new Vector3(.84f,.78f,2.13f),new Vector3(.14f,.12f,.05f),yellowMat).GetComponent<Renderer>();
+            var leftRearIndicator=CreateChildCube(root.transform,"LeftRearIndicator",new Vector3(-.84f,.82f,-2.07f),new Vector3(.14f,.12f,.05f),yellowMat).GetComponent<Renderer>();
+            var rightRearIndicator=CreateChildCube(root.transform,"RightRearIndicator",new Vector3(.84f,.82f,-2.07f),new Vector3(.14f,.12f,.05f),yellowMat).GetComponent<Renderer>();
+            var leftReverseLamp=CreateChildCube(root.transform,"LeftReverseLamp",new Vector3(-.34f,.82f,-2.07f),new Vector3(.18f,.12f,.05f),lineMat).GetComponent<Renderer>();
+            var rightReverseLamp=CreateChildCube(root.transform,"RightReverseLamp",new Vector3(.34f,.82f,-2.07f),new Vector3(.18f,.12f,.05f),lineMat).GetComponent<Renderer>();
+
+            var leftBeamGO=new GameObject("LeftLowBeam"); leftBeamGO.transform.SetParent(root.transform); leftBeamGO.transform.localPosition=new Vector3(-.58f,.82f,2.10f); leftBeamGO.transform.localRotation=Quaternion.identity;
+            var leftBeam=leftBeamGO.AddComponent<Light>(); leftBeam.type=LightType.Spot; leftBeam.range=28f; leftBeam.spotAngle=48f; leftBeam.intensity=2.2f; leftBeam.color=new Color(1f,.95f,.78f); leftBeam.enabled=false;
+            var rightBeamGO=new GameObject("RightLowBeam"); rightBeamGO.transform.SetParent(root.transform); rightBeamGO.transform.localPosition=new Vector3(.58f,.82f,2.10f); rightBeamGO.transform.localRotation=Quaternion.identity;
+            var rightBeam=rightBeamGO.AddComponent<Light>(); rightBeam.type=LightType.Spot; rightBeam.range=28f; rightBeam.spotAngle=48f; rightBeam.intensity=2.2f; rightBeam.color=new Color(1f,.95f,.78f); rightBeam.enabled=false;
+
+            var lightVisuals=root.AddComponent<VehicleLightVisuals>();
+            lightVisuals.systems=systems; lightVisuals.input=input; lightVisuals.car=car;
+            lightVisuals.headlamps=new[]{leftHeadlamp,rightHeadlamp};
+            lightVisuals.brakeLamps=new[]{leftTailLamp,rightTailLamp};
+            lightVisuals.reverseLamps=new[]{leftReverseLamp,rightReverseLamp};
+            lightVisuals.leftIndicators=new[]{leftFrontIndicator,leftRearIndicator};
+            lightVisuals.rightIndicators=new[]{rightFrontIndicator,rightRearIndicator};
+            lightVisuals.lowBeamLights=new[]{leftBeam,rightBeam};
 
             CreateChildCube(root.transform,"Dash",new Vector3(0,1.00f,.47f),new Vector3(1.68f,.22f,.46f),darkMat);
             CreateChildCube(root.transform,"DashTop",new Vector3(0,1.15f,.60f),new Vector3(1.62f,.08f,.36f),darkMat);
@@ -323,8 +344,9 @@ namespace RealDrivingAcademy.EditorTools
             var score=Text(canvas.transform,"Score",new Vector2(-20,-20),new Vector2(240,72),30,TextAnchor.MiddleRight,"Score: 100"); Anchor(score.rectTransform,new Vector2(1,1),new Vector2(1,1));
             var lesson=Text(canvas.transform,"Lesson",new Vector2(0,-100),new Vector2(900,68),28,TextAnchor.MiddleCenter,"Driving lesson"); Anchor(lesson.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var warning=Text(canvas.transform,"Warning",new Vector2(0,-170),new Vector2(900,62),26,TextAnchor.MiddleCenter,""); Anchor(warning.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
-            var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-88),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1)); driveDebug.gameObject.SetActive(false);
-            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning; hud.driveDebugText=driveDebug;
+            var systemsStatus=Text(canvas.transform,"SystemsStatus",new Vector2(20,-68),new Vector2(1100,42),22,TextAnchor.MiddleLeft,"HB"); Anchor(systemsStatus.rectTransform,new Vector2(0,1),new Vector2(0,1));
+            var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-108),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1)); driveDebug.gameObject.SetActive(false);
+            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning; hud.systemStatusText=systemsStatus; hud.driveDebugText=driveDebug;
 
             // Steering wheel touch area
             var steering=Panel(canvas.transform,"Steering",new Vector2(60,50),new Vector2(420,420),new Color(0.08f,0.08f,0.08f,.55f)); Anchor(steering,new Vector2(0,0),new Vector2(0,0));
@@ -339,6 +361,7 @@ namespace RealDrivingAcademy.EditorTools
             CreateSystemButton(canvas.transform,"BELT",new Vector2(-620,160),CockpitControl.ControlAction.SeatBelt,refs);
             CreateSystemButton(canvas.transform,"LEFT",new Vector2(-620,250),CockpitControl.ControlAction.LeftIndicator,refs);
             CreateSystemButton(canvas.transform,"RIGHT",new Vector2(-480,250),CockpitControl.ControlAction.RightIndicator,refs);
+            CreateSystemButton(canvas.transform,"HAZ",new Vector2(-790,250),CockpitControl.ControlAction.Hazards,refs);
             CreateSystemButton(canvas.transform,"LIGHT",new Vector2(-620,340),CockpitControl.ControlAction.LowBeams,refs);
             CreateSystemButton(canvas.transform,"WIPER",new Vector2(-480,340),CockpitControl.ControlAction.Wipers,refs);
             var camButton=Button(canvas.transform,"Camera",new Vector2(-790,340),new Vector2(125,72),"CAM"); Anchor(camButton.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); if(refs.cameraRig!=null) UnityEventTools.AddPersistentListener(camButton.onClick,refs.cameraRig.ToggleCamera);
