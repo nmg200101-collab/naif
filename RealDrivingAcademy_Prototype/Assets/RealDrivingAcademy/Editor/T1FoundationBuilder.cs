@@ -109,6 +109,12 @@ namespace RealDrivingAcademy.EditorTools
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+            var cameraObject = new GameObject("UICamera", typeof(Camera), typeof(AudioListener));
+            var camera = cameraObject.GetComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.02f, 0.03f, 0.045f, 1f);
+            camera.tag = "MainCamera";
+
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
 
             var root = new GameObject("RDA_UI_Root");
