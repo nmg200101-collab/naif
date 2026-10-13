@@ -164,7 +164,7 @@ namespace RealDrivingAcademy.EditorTools
             var car=root.AddComponent<RealisticCarController>();
             root.AddComponent<VehicleSafetyAssist>().car=car;
             var violations=root.AddComponent<DrivingViolationSystem>(); violations.car=car; violations.systems=systems;
-            var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.centerOfMass=new Vector3(0f,.34f,-.05f); cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
+            var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.centerOfMass=new Vector3(0f,.34f,-.05f); cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.fullSteerUntilKph=18f; cfg.reducedSteerAtKph=80f; cfg.steeringAssistAtTopSpeed=.38f; cfg.launchTorqueMultiplier=.62f; cfg.reverseTorqueMultiplier=.55f; cfg.launchAssistEndKph=28f; cfg.maxReverseSpeedKph=25f; cfg.safeDirectionChangeSpeedKph=3f; cfg.coastBrakeTorque=110f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
             if (!AssetDatabase.IsValidFolder("Assets/RealDrivingAcademy/Configs")) AssetDatabase.CreateFolder("Assets/RealDrivingAcademy","Configs");
             const string cfgPath = "Assets/RealDrivingAcademy/Configs/TrainingSedan_Stage2.asset";
             if (AssetDatabase.LoadAssetAtPath<VehicleConfig>(cfgPath) != null) AssetDatabase.DeleteAsset(cfgPath);
