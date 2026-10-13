@@ -26,12 +26,20 @@ namespace RealDrivingAcademy.Vehicle
         [Range(0f, 1f)] public float drivetrainEfficiency = 0.88f;
         public float autoUpshiftRpm = 5000f;
         public float autoDownshiftRpm = 1650f;
+        [Min(1f)] public float maxReverseSpeedKph = 25f;
+        [Min(0f)] public float safeDirectionChangeSpeedKph = 3f;
+        [Range(0.1f, 1f)] public float launchTorqueMultiplier = 0.62f;
+        [Range(0.1f, 1f)] public float reverseTorqueMultiplier = 0.55f;
+        [Min(1f)] public float launchAssistEndKph = 28f;
 
         [Header("Chassis")]
         [Min(500f)] public float mass = 1450f;
         public Vector3 centerOfMass = new Vector3(0f, 0.34f, -0.05f);
         [Min(1f)] public float maxSteerAngle = 34f;
+        [Min(0f)] public float fullSteerUntilKph = 18f;
+        [Min(1f)] public float reducedSteerAtKph = 80f;
         [Min(1f)] public float serviceBrakeTorque = 3300f;
+        [Min(0f)] public float coastBrakeTorque = 110f;
         [Min(1f)] public float handbrakeTorque = 5200f;
         [Min(1f)] public float maxSpeedKph = 190f;
         [Range(0f, 1f)] public float absSlipThreshold = 0.42f;
