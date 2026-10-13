@@ -105,5 +105,24 @@ namespace RealDrivingAcademy.Vehicle
         {
             handbrake = value;
         }
+
+        public void ResetDrivingInputs(bool engageHandbrake = true)
+        {
+            keyboardSteering = 0f;
+            keyboardThrottle = 0f;
+            keyboardBrake = 0f;
+            keyboardClutch = 0f;
+
+            uiSteering = 0f;
+            uiThrottle = 0f;
+            uiBrake = 0f;
+            uiClutch = 0f;
+
+            steering = 0f;
+            throttle = 0f;
+            brake = 0f;
+            clutch = 0f;
+            handbrake = engageHandbrake;
+        }
     }
 }
