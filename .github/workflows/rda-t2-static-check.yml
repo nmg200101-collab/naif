@@ -1,0 +1,20 @@
+name: RDA T2 Static Check
+
+on:
+  push:
+    branches:
+      - rda-t2-vehicle-stability
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout T2 branch
+        uses: actions/checkout@v4
+
+      - name: Verify T2-5 vehicle stability changes
+        run: python3 Tools/t2_static_check.py
