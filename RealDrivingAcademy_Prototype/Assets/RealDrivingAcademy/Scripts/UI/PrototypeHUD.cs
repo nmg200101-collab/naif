@@ -17,12 +17,16 @@ namespace RealDrivingAcademy.UI
         public Text lessonText;
         public Text warningText;
         public Text driveDebugText;
+        public bool showDriveDebug;
 
         CarInputState input;
         CarSystems systems;
 
         void Awake()
         {
+            if (driveDebugText != null)
+                driveDebugText.gameObject.SetActive(showDriveDebug);
+
             if (car != null)
             {
                 input = car.GetComponent<CarInputState>();
@@ -44,6 +48,12 @@ namespace RealDrivingAcademy.UI
 
         void Update()
         {
+            if (Input.GetKeyDown(KeyCode.F3) && driveDebugText != null)
+            {
+                showDriveDebug = !showDriveDebug;
+                driveDebugText.gameObject.SetActive(showDriveDebug);
+            }
+
             if (car != null)
             {
                 if (speedText != null) speedText.text = Mathf.RoundToInt(car.speedKph) + " km/h";
