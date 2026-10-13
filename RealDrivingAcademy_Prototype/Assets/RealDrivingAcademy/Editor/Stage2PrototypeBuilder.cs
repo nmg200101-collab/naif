@@ -148,6 +148,7 @@ namespace RealDrivingAcademy.EditorTools
             public CarSystems systems;
             public DrivingViolationSystem violations;
             public Camera camera;
+            public VehicleCameraRig cameraRig;
             public Transform steering;
             public Transform accelerator, brake, clutch, shifter;
             public Transform speedNeedle, rpmNeedle;
@@ -171,20 +172,39 @@ namespace RealDrivingAcademy.EditorTools
             AssetDatabase.CreateAsset(cfg,cfgPath);
             car.config=cfg;
 
-            // Body shell
+            // Body shell — visual prototype only. Driver-hidden layer keeps large shell pieces out of the cockpit camera.
+            const int driverHiddenLayer = 2; // Built-in Ignore Raycast layer, reused only for prototype driver culling.
             var chassis=root.AddComponent<BoxCollider>(); chassis.center=new Vector3(0f,.58f,0f); chassis.size=new Vector3(1.74f,.46f,3.72f);
-            CreateChildCube(root.transform,"Floor",new Vector3(0,0.40f,0),new Vector3(1.9f,.22f,4.2f),bodyMat);
-            CreateChildCube(root.transform,"Hood",new Vector3(0,0.80f,1.45f),new Vector3(1.85f,.35f,1.25f),bodyMat);
-            CreateChildCube(root.transform,"Roof",new Vector3(0,1.65f,-.20f),new Vector3(1.75f,.14f,1.75f),bodyMat);
-            CreateChildCube(root.transform,"RearBody",new Vector3(0,0.92f,-1.55f),new Vector3(1.85f,.50f,1.1f),bodyMat);
-            CreateChildCube(root.transform,"Dash",new Vector3(0,1.05f,.50f),new Vector3(1.75f,.28f,.55f),darkMat);
-            CreateChildCube(root.transform,"CenterConsole",new Vector3(0,0.72f,.05f),new Vector3(.42f,.38f,1.35f),darkMat);
-            // Windshield / windows are visual panels (opaque placeholder until real model)
-            var windshield=CreateChildCube(root.transform,"Windshield",new Vector3(0,1.45f,.88f),new Vector3(1.68f,.72f,.05f),glassMat); windshield.transform.rotation=Quaternion.Euler(-18f,0,0);
-            CreateChildCube(root.transform,"LeftDoor",new Vector3(-.96f,1.02f,-.25f),new Vector3(.08f,.95f,1.70f),bodyMat);
-            CreateChildCube(root.transform,"RightDoor",new Vector3(.96f,1.02f,-.25f),new Vector3(.08f,.95f,1.70f),bodyMat);
-            CreateSeat(root.transform,new Vector3(-.46f,.77f,-.45f));
-            CreateSeat(root.transform,new Vector3(.46f,.77f,-.45f));
+            CreateChildCube(root.transform,"Floor",new Vector3(0,0.40f,0),new Vector3(1.88f,.20f,4.10f),bodyMat);
+
+            var hood=CreateChildCube(root.transform,"Hood",new Vector3(0,0.78f,1.48f),new Vector3(1.82f,.28f,1.28f),bodyMat);
+            hood.transform.rotation=Quaternion.Euler(-4f,0,0);
+            var rearBody=CreateChildCube(root.transform,"RearBody",new Vector3(0,0.88f,-1.53f),new Vector3(1.84f,.42f,1.02f),bodyMat);
+            rearBody.transform.rotation=Quaternion.Euler(3f,0,0);
+
+            var roof=CreateChildCube(root.transform,"Roof",new Vector3(0,1.63f,-.20f),new Vector3(1.66f,.10f,1.48f),bodyMat);
+            roof.layer=driverHiddenLayer;
+
+            var windshield=CreateChildCube(root.transform,"Windshield",new Vector3(0,1.42f,.86f),new Vector3(1.58f,.58f,.035f),glassMat);
+            windshield.transform.rotation=Quaternion.Euler(-20f,0,0);
+            windshield.layer=driverHiddenLayer;
+
+            var leftDoor=CreateChildCube(root.transform,"LeftDoor",new Vector3(-.94f,1.02f,-.25f),new Vector3(.06f,.88f,1.62f),bodyMat);
+            var rightDoor=CreateChildCube(root.transform,"RightDoor",new Vector3(.94f,1.02f,-.25f),new Vector3(.06f,.88f,1.62f),bodyMat);
+            leftDoor.layer=driverHiddenLayer; rightDoor.layer=driverHiddenLayer;
+
+            CreateChildCube(root.transform,"FrontBumper",new Vector3(0,.58f,2.08f),new Vector3(1.78f,.18f,.16f),darkMat);
+            CreateChildCube(root.transform,"RearBumper",new Vector3(0,.60f,-2.02f),new Vector3(1.78f,.18f,.16f),darkMat);
+            CreateChildCube(root.transform,"LeftHeadlamp",new Vector3(-.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat);
+            CreateChildCube(root.transform,"RightHeadlamp",new Vector3(.58f,.82f,2.12f),new Vector3(.38f,.16f,.05f),lineMat);
+            CreateChildCube(root.transform,"LeftTailLamp",new Vector3(-.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat);
+            CreateChildCube(root.transform,"RightTailLamp",new Vector3(.60f,.88f,-2.06f),new Vector3(.34f,.16f,.05f),redMat);
+
+            CreateChildCube(root.transform,"Dash",new Vector3(0,1.00f,.47f),new Vector3(1.68f,.22f,.46f),darkMat);
+            CreateChildCube(root.transform,"DashTop",new Vector3(0,1.15f,.60f),new Vector3(1.62f,.08f,.36f),darkMat);
+            CreateChildCube(root.transform,"CenterConsole",new Vector3(0,0.69f,.02f),new Vector3(.36f,.30f,1.18f),darkMat);
+            CreateSeat(root.transform,new Vector3(-.46f,.75f,-.48f));
+            CreateSeat(root.transform,new Vector3(.46f,.75f,-.48f));
 
             // Steering wheel
             var steerRoot=new GameObject("SteeringWheel").transform; steerRoot.SetParent(root.transform); steerRoot.localPosition=new Vector3(-.48f,1.05f,.22f); steerRoot.localRotation=Quaternion.Euler(68f,0,0);
@@ -222,17 +242,25 @@ namespace RealDrivingAcademy.EditorTools
 
             CreateMirrors(root.transform);
 
-            // Driver camera
-            var headAnchor=new GameObject("DriverHeadAnchor").transform; headAnchor.SetParent(root.transform); headAnchor.localPosition=new Vector3(-.47f,1.40f,-.52f); headAnchor.localRotation=Quaternion.identity;
+            // Driver and chase cameras
+            var headAnchor=new GameObject("DriverHeadAnchor").transform; headAnchor.SetParent(root.transform); headAnchor.localPosition=new Vector3(-.47f,1.42f,-.62f); headAnchor.localRotation=Quaternion.identity;
             var camGO=new GameObject("DriverCamera"); camGO.transform.SetParent(root.transform); camGO.transform.localPosition=headAnchor.localPosition; camGO.transform.localRotation=Quaternion.identity;
-            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=68f; cam.nearClipPlane=.08f; cam.tag="MainCamera"; camGO.AddComponent<AudioListener>();
+            var cam=camGO.AddComponent<Camera>(); cam.fieldOfView=74f; cam.nearClipPlane=.10f; cam.tag="MainCamera"; cam.cullingMask &= ~(1 << 2);
+            var driverListener=camGO.AddComponent<AudioListener>();
             var cc=camGO.AddComponent<DriverCameraController>(); cc.driverSeatAnchor=headAnchor; cc.yawLimit=105f; cc.pitchLimit=35f;
+
+            var chaseGO=new GameObject("ChaseCamera"); chaseGO.transform.SetParent(root.transform); chaseGO.transform.localPosition=new Vector3(0f,2.35f,-5.6f); chaseGO.transform.localRotation=Quaternion.Euler(10f,0f,0f);
+            var chaseCam=chaseGO.AddComponent<Camera>(); chaseCam.fieldOfView=66f; chaseCam.nearClipPlane=.18f; chaseCam.enabled=false;
+            var chaseListener=chaseGO.AddComponent<AudioListener>(); chaseListener.enabled=false;
+
+            var cameraRig=root.AddComponent<VehicleCameraRig>(); cameraRig.driverCamera=cam; cameraRig.chaseCamera=chaseCam; cameraRig.driverListener=driverListener; cameraRig.chaseListener=chaseListener; cameraRig.mode=0;
+
             // audio
             var aud=root.AddComponent<AudioSource>(); aud.spatialBlend=.6f;
             var pae=root.AddComponent<ProceduralEngineAudio>(); pae.car=car;
 
             systems.ignitionOn=false; systems.seatBeltFastened=false;
-            return new CarRefs{gameObject=root,car=car,input=input,systems=systems,violations=violations,camera=cam,steering=steerRoot,accelerator=accel,brake=brake,clutch=clutch,shifter=shifter.transform,speedNeedle=speedN,rpmNeedle=rpmN,leftWiper=lw,rightWiper=rw};
+            return new CarRefs{gameObject=root,car=car,input=input,systems=systems,violations=violations,camera=cam,cameraRig=cameraRig,steering=steerRoot,accelerator=accel,brake=brake,clutch=clutch,shifter=shifter.transform,speedNeedle=speedN,rpmNeedle=rpmN,leftWiper=lw,rightWiper=rw};
         }
 
         static void AddPedal(GameObject root,CarInputState input,Transform t,PedalVisual.PedalType type)
@@ -295,7 +323,7 @@ namespace RealDrivingAcademy.EditorTools
             var score=Text(canvas.transform,"Score",new Vector2(-20,-20),new Vector2(240,72),30,TextAnchor.MiddleRight,"Score: 100"); Anchor(score.rectTransform,new Vector2(1,1),new Vector2(1,1));
             var lesson=Text(canvas.transform,"Lesson",new Vector2(0,-100),new Vector2(900,68),28,TextAnchor.MiddleCenter,"Driving lesson"); Anchor(lesson.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var warning=Text(canvas.transform,"Warning",new Vector2(0,-170),new Vector2(900,62),26,TextAnchor.MiddleCenter,""); Anchor(warning.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
-            var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-88),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1));
+            var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-88),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1)); driveDebug.gameObject.SetActive(false);
             var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning; hud.driveDebugText=driveDebug;
 
             // Steering wheel touch area
@@ -313,6 +341,7 @@ namespace RealDrivingAcademy.EditorTools
             CreateSystemButton(canvas.transform,"RIGHT",new Vector2(-480,250),CockpitControl.ControlAction.RightIndicator,refs);
             CreateSystemButton(canvas.transform,"LIGHT",new Vector2(-620,340),CockpitControl.ControlAction.LowBeams,refs);
             CreateSystemButton(canvas.transform,"WIPER",new Vector2(-480,340),CockpitControl.ControlAction.Wipers,refs);
+            var camButton=Button(canvas.transform,"Camera",new Vector2(-790,340),new Vector2(125,72),"CAM"); Anchor(camButton.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); if(refs.cameraRig!=null) UnityEventTools.AddPersistentListener(camButton.onClick,refs.cameraRig.ToggleCamera);
             var hb=Button(canvas.transform,"Handbrake",new Vector2(-620,430),new Vector2(260,75),"HANDBRAKE"); Anchor(hb.GetComponent<RectTransform>(),new Vector2(1,0),new Vector2(1,0)); var hbc=hb.gameObject.AddComponent<HoldHandbrakeButton>(); hbc.input=refs.input; hbc.latchMode=true;
 
             // Gears
