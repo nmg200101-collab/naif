@@ -33,6 +33,13 @@ if "2022.3.62f1" not in version:
     print("Unexpected Unity version")
     sys.exit(1)
 
+all_cs = list(RDA.rglob("*.cs"))
+for script in all_cs:
+    text = script.read_text(encoding="utf-8")
+    if "Arial.ttf" in text:
+        print("Deprecated built-in font reference found:", script)
+        sys.exit(1)
+
 runtime_scripts = list((RDA / "Scripts").rglob("*.cs"))
 bad_editor_refs = []
 for script in runtime_scripts:
