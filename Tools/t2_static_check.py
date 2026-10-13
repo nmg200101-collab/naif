@@ -6,6 +6,7 @@ RDA = ROOT / "Assets" / "RealDrivingAcademy"
 
 required = [
     RDA / "Editor" / "Stage2PrototypeBuilder.cs",
+    RDA / "Editor" / "T2FinalValidator.cs",
     RDA / "Scripts" / "Vehicle" / "VehicleConfig.cs",
     RDA / "Scripts" / "Vehicle" / "CarInputState.cs",
     RDA / "Scripts" / "Vehicle" / "RealisticCarController.cs",
@@ -69,6 +70,7 @@ checks = {
     "safe recovery reset": 'ResetDrivingInputs' in inputs and 'lastSafePosition' in (RDA / "Scripts" / "Vehicle" / "VehicleSafetyAssist.cs").read_text(encoding="utf-8"),
     "rollover recovery": 'upsideDownSecondsBeforeReset' in (RDA / "Scripts" / "Vehicle" / "VehicleSafetyAssist.cs").read_text(encoding="utf-8"),
     "reset button": '"RESET"' in builder and 'safetyAssist.ResetVehicle' in builder,
+    "final editor validator": 'Build & Validate Vehicle Stage' in (RDA / "Editor" / "T2FinalValidator.cs").read_text(encoding="utf-8") and 'RDA T2 EDITOR VALIDATION PASSED' in (RDA / "Editor" / "T2FinalValidator.cs").read_text(encoding="utf-8"),
 }
 
 failed = [name for name, ok in checks.items() if not ok]
@@ -84,6 +86,6 @@ for path in required:
         print("Unbalanced braces:", path)
         sys.exit(1)
 
-print("RDA T2-9 static checks PASSED")
+print("RDA T2-10 static checks PASSED")
 for name in checks:
     print(" -", name)
