@@ -330,7 +330,22 @@ namespace RealDrivingAcademy.EditorTools
         static void CreateTrainingSystems(CarRefs refs)
         {
             var lm=new GameObject("LessonManager").AddComponent<DrivingLessonManager>(); lm.car=refs.car; lm.input=refs.input; lm.systems=refs.systems;
+
             var speedZone=new GameObject("SpeedLimit50"); speedZone.transform.position=new Vector3(0,1f,0); var bc=speedZone.AddComponent<BoxCollider>(); bc.isTrigger=true; bc.size=new Vector3(14f,3f,12f); speedZone.AddComponent<SpeedLimitZone>().speedLimitKph=50f;
+
+            // T3 guided lesson checkpoint gate.
+            CreateCube("LessonCheckpointLeft",new Vector3(-5.8f,1.5f,28f),new Vector3(.22f,3f,.22f),yellowMat,false);
+            CreateCube("LessonCheckpointRight",new Vector3(5.8f,1.5f,28f),new Vector3(.22f,3f,.22f),yellowMat,false);
+            CreateCube("LessonCheckpointTop",new Vector3(0f,2.9f,28f),new Vector3(11.8f,.18f,.18f),yellowMat,false);
+            var checkpoint=new GameObject("LessonCheckpointZone"); checkpoint.transform.position=new Vector3(0f,1.2f,28f);
+            var checkpointCollider=checkpoint.AddComponent<BoxCollider>(); checkpointCollider.isTrigger=true; checkpointCollider.size=new Vector3(12f,2.5f,1.5f);
+            var checkpointZone=checkpoint.AddComponent<LessonCheckpointZone>(); checkpointZone.lesson=lm; checkpointZone.checkpointId="T3_GATE_01";
+
+            // T3 stop target before the stop line / intersection.
+            CreateCube("LessonStopTarget",new Vector3(0f,.235f,47.5f),new Vector3(10f,.025f,5f),greenMat,false);
+            var stopZone=new GameObject("LessonStopZone"); stopZone.transform.position=new Vector3(0f,1.1f,47.5f);
+            var stopCollider=stopZone.AddComponent<BoxCollider>(); stopCollider.isTrigger=true; stopCollider.size=new Vector3(10f,2.2f,5f);
+            stopZone.AddComponent<LessonStopZone>().lesson=lm;
         }
 
         static void CreateUI(CarRefs refs)
@@ -343,11 +358,12 @@ namespace RealDrivingAcademy.EditorTools
             var rpm=Text(canvas.transform,"RPM",new Vector2(310,-20),new Vector2(280,72),28,TextAnchor.MiddleLeft,"850 RPM"); Anchor(rpm.rectTransform,new Vector2(0,1),new Vector2(0,1));
             var gear=Text(canvas.transform,"Gear",new Vector2(600,-20),new Vector2(120,72),34,TextAnchor.MiddleCenter,"N"); Anchor(gear.rectTransform,new Vector2(0,1),new Vector2(0,1));
             var score=Text(canvas.transform,"Score",new Vector2(-20,-20),new Vector2(240,72),30,TextAnchor.MiddleRight,"Score: 100"); Anchor(score.rectTransform,new Vector2(1,1),new Vector2(1,1));
+            var lessonProgress=Text(canvas.transform,"LessonProgress",new Vector2(0,-56),new Vector2(320,40),22,TextAnchor.MiddleCenter,"Lesson 1/9"); Anchor(lessonProgress.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var lesson=Text(canvas.transform,"Lesson",new Vector2(0,-100),new Vector2(900,68),28,TextAnchor.MiddleCenter,"Driving lesson"); Anchor(lesson.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var warning=Text(canvas.transform,"Warning",new Vector2(0,-170),new Vector2(900,62),26,TextAnchor.MiddleCenter,""); Anchor(warning.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var systemsStatus=Text(canvas.transform,"SystemsStatus",new Vector2(20,-68),new Vector2(1100,42),22,TextAnchor.MiddleLeft,"HB"); Anchor(systemsStatus.rectTransform,new Vector2(0,1),new Vector2(0,1));
             var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-108),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1)); driveDebug.gameObject.SetActive(false);
-            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.warningText=warning; hud.systemStatusText=systemsStatus; hud.driveDebugText=driveDebug;
+            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.lessonProgressText=lessonProgress; hud.warningText=warning; hud.systemStatusText=systemsStatus; hud.driveDebugText=driveDebug;
 
             // Steering wheel touch area
             var steering=Panel(canvas.transform,"Steering",new Vector2(60,50),new Vector2(420,420),new Color(0.08f,0.08f,0.08f,.55f)); Anchor(steering,new Vector2(0,0),new Vector2(0,0));
