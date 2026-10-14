@@ -20,6 +20,7 @@ for path in required:
 
 builder = (RDA / "Editor" / "Stage2PrototypeBuilder.cs").read_text(encoding="utf-8")
 realism = (RDA / "Editor" / "T4RealismBuilder.cs").read_text(encoding="utf-8")
+manifest = (ROOT / "Packages" / "manifest.json").read_text(encoding="utf-8")
 validator = (RDA / "Editor" / "T4FinalValidator.cs").read_text(encoding="utf-8")
 visual = (RDA / "Scripts" / "Vehicle" / "VehicleVisualLayer.cs").read_text(encoding="utf-8")
 anchors = (RDA / "Scripts" / "Vehicle" / "DriverRigAnchors.cs").read_text(encoding="utf-8")
@@ -27,6 +28,7 @@ anchors = (RDA / "Scripts" / "Vehicle" / "DriverRigAnchors.cs").read_text(encodi
 checks = {
     "T4 environment hook": "T4RealismBuilder.ApplyEnvironment();" in builder,
     "T4 vehicle hook": "T4RealismBuilder.Apply(car.gameObject);" in builder,
+    "Unity glTFast package": '"com.unity.cloud.gltfast": "5.2.0"' in manifest,
     "visual separation": '"VisualModel_Old"' in realism and '"Sedan_Realistic"' in realism,
     "driver-hidden exterior hierarchy": '"Exterior_DriverHidden"' in realism and 'SetLayerRecursively(exteriorRoot.transform, DriverHiddenLayer)' in realism,
     "driver camera culling": 'camera.cullingMask &= ~(1 << DriverHiddenLayer)' in realism,
@@ -49,6 +51,9 @@ checks = {
     "roadside detail": "Sidewalk_Left" in realism and "StreetLight_T4" in realism,
     "prototype mountains removed": 'x.name == "MountainPlaceholder"' in realism,
     "visual layer runtime switch": "UseRealisticVisuals" in visual and "UsePrototypeVisuals" in visual,
+    "production GLB downloader": (RDA / "Editor" / "T4ProductionAssetInstaller.cs").exists() and "spectral_gt_rs_game_ready.glb" in (RDA / "Editor" / "T4ProductionAssetInstaller.cs").read_text(encoding="utf-8"),
+    "production GLB adapter": (RDA / "Editor" / "T4ProductionCarAdapter.cs").exists() and "ProductionCar_Real" in (RDA / "Editor" / "T4ProductionCarAdapter.cs").read_text(encoding="utf-8"),
+    "production required by validator": "ProductionCar_Real hierarchy not found" in validator and "procedural fallback is not accepted" in validator,
     "final Unity gate": "Build & Validate Realism Stage" in validator and "RDA T4 EDITOR VALIDATION PASSED" in validator,
     "cockpit namespace imported": "using RealDrivingAcademy.Cockpit;" in realism and "using RealDrivingAcademy.Cockpit;" in validator,
 }
