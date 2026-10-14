@@ -62,7 +62,8 @@ namespace RealDrivingAcademy.UI
                 if (rpmText != null) rpmText.text = Mathf.RoundToInt(car.engineRpm) + " RPM";
                 if (gearText != null) gearText.text = car.selectedGear < 0 ? "R" : car.selectedGear == 0 ? "N" : car.selectedGear.ToString();
             }
-            if (scoreText != null && violations != null) scoreText.text = "Score: " + violations.score;
+            if (scoreText != null && violations != null)
+                scoreText.text = "Score: " + violations.score + "  Grade: " + violations.Grade;
 
             if (lessonProgressText != null && lesson != null)
             {
