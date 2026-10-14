@@ -42,6 +42,7 @@ checks = {
     "prototype mountains removed": 'x.name == "MountainPlaceholder"' in realism,
     "visual layer runtime switch": "UseRealisticVisuals" in visual and "UsePrototypeVisuals" in visual,
     "final Unity gate": "Build & Validate Realism Stage" in validator and "RDA T4 EDITOR VALIDATION PASSED" in validator,
+    "cockpit namespace imported": "using RealDrivingAcademy.Cockpit;" in realism and "using RealDrivingAcademy.Cockpit;" in validator,
 }
 
 failed = [name for name, ok in checks.items() if not ok]
