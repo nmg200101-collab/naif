@@ -27,7 +27,7 @@ namespace RealDrivingAcademy.EditorTools
             string training = BuildTrainingMenu();
             string test = BuildPlaceholder(RdaSceneNames.TestMenu, "Driving Test", "Theory and practical test modules will be expanded in T9.", GameFlowState.DrivingTest);
             string garage = BuildPlaceholder(RdaSceneNames.Garage, "Garage", "Vehicle selection will be expanded in T10.", GameFlowState.Garage);
-            string progress = BuildPlaceholder(RdaSceneNames.Progress, "Progress", "Learner progress and history will be expanded in T10.", GameFlowState.Progress);
+            string progress = BuildProgress();
             string settings = BuildSettings();
 
             string trainingGround = ScenesDir + "/" + RdaSceneNames.TrainingGround + ".unity";
@@ -75,10 +75,21 @@ namespace RealDrivingAcademy.EditorTools
         static string BuildTrainingMenu()
         {
             var context = NewUiScene(RdaSceneNames.TrainingMenu, "Training", GameFlowState.Training);
-            CreateInfo(context.content, "Stage 2 driving ground is connected to the T1 navigation flow.", 120f);
-            CreateButton(context.content, "Start Training Drive", 5f, context.actions.StartTrainingDrive);
+            var panel = context.root.AddComponent<RdaTrainingMenuPanel>();
+            panel.statusText = CreateInfo(context.content, "Basic Driving Lesson", 145f);
+            CreateButton(context.content, "Start Basic Driving Lesson", 5f, context.actions.StartTrainingDrive);
             CreateButton(context.content, "Back to Main Menu", -90f, context.actions.BackToMainMenu);
             return Save(context.scene, RdaSceneNames.TrainingMenu);
+        }
+
+        static string BuildProgress()
+        {
+            var context = NewUiScene(RdaSceneNames.Progress, "Progress", GameFlowState.Progress);
+            var panel = context.root.AddComponent<RdaProgressPanel>();
+            panel.summaryText = CreateInfo(context.content, "Learner Progress", 120f);
+            panel.summaryText.rectTransform.sizeDelta = new Vector2(850f, 330f);
+            CreateButton(context.content, "Back to Main Menu", -160f, context.actions.BackToMainMenu);
+            return Save(context.scene, RdaSceneNames.Progress);
         }
 
         static string BuildPlaceholder(string sceneName, string title, string message, GameFlowState state)
