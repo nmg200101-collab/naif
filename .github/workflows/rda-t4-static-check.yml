@@ -1,0 +1,20 @@
+name: RDA T4 Static Check
+
+on:
+  push:
+    branches:
+      - rda-t4-realism-pass
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout T4 branch
+        uses: actions/checkout@v4
+
+      - name: Verify T4 realism pass
+        run: python3 Tools/t4_static_check.py
