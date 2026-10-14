@@ -171,6 +171,28 @@ namespace RealDrivingAcademy.Persistence
             return true;
         }
 
+        public bool RecordPracticalResult(string lessonId, int score, bool markLessonComplete)
+        {
+            score = Mathf.Clamp(score, 0, 100);
+            bool changed = false;
+
+            if (score > Progress.bestPracticalScore)
+            {
+                Progress.bestPracticalScore = score;
+                changed = true;
+            }
+
+            if (markLessonComplete && Progress.MarkLessonComplete(lessonId))
+                changed = true;
+
+            if (!changed)
+                return false;
+
+            SaveNow();
+            ProgressChanged?.Invoke();
+            return true;
+        }
+
         public void SetSelectedVehicle(string vehicleId)
         {
             if (string.IsNullOrWhiteSpace(vehicleId))
