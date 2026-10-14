@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using RealDrivingAcademy.Vehicle;
+using RealDrivingAcademy.Cockpit;
 
 namespace RealDrivingAcademy.EditorTools
 {
