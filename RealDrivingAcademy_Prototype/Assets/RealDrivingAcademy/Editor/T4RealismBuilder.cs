@@ -16,6 +16,7 @@ namespace RealDrivingAcademy.EditorTools
         const string SedanRoot = VehicleRoot + "/Sedan";
         const string MeshRoot = SedanRoot + "/Meshes";
         const string MaterialRoot = SedanRoot + "/Materials";
+        const int DriverHiddenLayer = 2;
 
         static Material paint;
         static Material glass;
@@ -122,19 +123,24 @@ namespace RealDrivingAcademy.EditorTools
             var realisticRoot = new GameObject("Sedan_Realistic");
             realisticRoot.transform.SetParent(carRoot.transform, false);
 
+            var exteriorRoot = new GameObject("Exterior_DriverHidden");
+            exteriorRoot.transform.SetParent(realisticRoot.transform, false);
+
             var body = CreateMeshObject(
-                realisticRoot.transform,
+                exteriorRoot.transform,
                 "SedanBody",
                 BuildSedanBodyMesh(),
                 paint);
 
             body.transform.localPosition = Vector3.zero;
 
-            CreateGlass(realisticRoot.transform);
-            CreateExteriorTrim(realisticRoot.transform);
+            CreateGlass(exteriorRoot.transform);
+            CreateExteriorTrim(exteriorRoot.transform);
+            ReplaceWheelVisuals(exteriorRoot.transform, carRoot);
+            RewireVehicleLights(exteriorRoot.transform, carRoot);
+            SetLayerRecursively(exteriorRoot.transform, DriverHiddenLayer);
+
             CreateInterior(realisticRoot.transform, carRoot);
-            ReplaceWheelVisuals(realisticRoot.transform, carRoot);
-            RewireVehicleLights(realisticRoot.transform, carRoot);
             RecreateMirrorDisplays(realisticRoot.transform, carRoot);
             RepositionCameras(carRoot);
 
@@ -578,6 +584,7 @@ namespace RealDrivingAcademy.EditorTools
                     camera.fieldOfView = 70f;
                     camera.nearClipPlane = .07f;
                     camera.allowHDR = true;
+                    camera.cullingMask &= ~(1 << DriverHiddenLayer);
                 }
             }
 
@@ -595,6 +602,7 @@ namespace RealDrivingAcademy.EditorTools
                 {
                     camera.fieldOfView = 62f;
                     camera.allowHDR = true;
+                    camera.cullingMask |= 1 << DriverHiddenLayer;
                 }
             }
         }
@@ -702,6 +710,17 @@ namespace RealDrivingAcademy.EditorTools
             RenderSettings.fogColor = new Color(.64f, .72f, .80f);
             RenderSettings.fogStartDistance = 85f;
             RenderSettings.fogEndDistance = 210f;
+        }
+
+        static void SetLayerRecursively(Transform root, int layer)
+        {
+            if (root == null)
+                return;
+
+            root.gameObject.layer = layer;
+
+            for (int i = 0; i < root.childCount; i++)
+                SetLayerRecursively(root.GetChild(i), layer);
         }
 
         static Renderer CreateLamp(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
