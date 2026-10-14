@@ -12,7 +12,12 @@ namespace RealDrivingAcademy.EditorTools
     public static class T4ProductionCarAdapter
     {
         const string ProductionRootName = "ProductionCar_Real";
-        const float ModelScale = 0.90f;
+        const float SourceWheelbaseMeters = 2.85f;
+        const float PhysicsWheelbaseMeters = 2.60f;
+        const float SourceWheelCenterHeight = 0.53f;
+        const float PhysicsWheelCenterHeight = 0.52f;
+        const float ModelScale = PhysicsWheelbaseMeters / SourceWheelbaseMeters;
+        const float ModelRotationY = 90f;
 
         public static bool TryApply(GameObject carRoot)
         {
@@ -31,9 +36,19 @@ namespace RealDrivingAcademy.EditorTools
 
             GameObject instance = UnityEngine.Object.Instantiate(prefab, carRoot.transform);
             instance.name = ProductionRootName;
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
+            instance.transform.localPosition =
+                new Vector3(
+                    0f,
+                    PhysicsWheelCenterHeight - SourceWheelCenterHeight * ModelScale,
+                    0f);
+            // glTF handedness conversion flips the authored +X front axis.
+            // +90 degrees maps the imported production model back to RDA +Z forward.
+            instance.transform.localRotation =
+                Quaternion.Euler(0f, ModelRotationY, 0f);
             instance.transform.localScale = Vector3.one * ModelScale;
+
+            foreach (var animator in instance.GetComponentsInChildren<Animator>(true))
+                animator.enabled = false;
 
             // Keep the older procedural pass only as a hidden diagnostics fallback.
             Transform procedural = carRoot.transform.Find("Sedan_Realistic");
@@ -147,15 +162,55 @@ namespace RealDrivingAcademy.EditorTools
                     other != t && t.IsChildOf(other)))
                 .ToList();
 
+            Vector3 sourceCenter = CalculateVisualCenter(topLevel);
+
             var pivot = new GameObject(pivotName).transform;
-            pivot.SetParent(carRoot, false);
-            pivot.position = collider.transform.position;
+            pivot.SetParent(carRoot, true);
+            pivot.position = sourceCenter;
             pivot.rotation = collider.transform.rotation;
 
             foreach (Transform part in topLevel)
                 part.SetParent(pivot, true);
 
+            // Move the whole production wheel group onto the existing physics wheel.
+            pivot.position = collider.transform.position;
+
             assign(pivot);
+        }
+
+        static Vector3 CalculateVisualCenter(List<Transform> roots)
+        {
+            bool hasBounds = false;
+            Bounds bounds = default;
+
+            foreach (Transform root in roots)
+            {
+                foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (!hasBounds)
+                    {
+                        bounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                }
+            }
+
+            if (hasBounds)
+                return bounds.center;
+
+            Vector3 sum = Vector3.zero;
+            int count = 0;
+            foreach (Transform root in roots)
+            {
+                sum += root.position;
+                count++;
+            }
+
+            return count > 0 ? sum / count : Vector3.zero;
         }
 
         static void BindProductionSteering(
