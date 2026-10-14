@@ -131,11 +131,18 @@ namespace RealDrivingAcademy.EditorTools
                 "SedanBody",
                 BuildSedanBodyMesh(),
                 paint);
-
             body.transform.localPosition = Vector3.zero;
+
+            var cabin = CreateMeshObject(
+                exteriorRoot.transform,
+                "CabinRoof",
+                BuildCabinMesh(),
+                paint);
+            cabin.transform.localPosition = Vector3.zero;
 
             CreateGlass(exteriorRoot.transform);
             CreateExteriorTrim(exteriorRoot.transform);
+            CreateSpectralExteriorDetails(exteriorRoot.transform);
             ReplaceWheelVisuals(exteriorRoot.transform, carRoot);
             RewireVehicleLights(exteriorRoot.transform, carRoot);
             SetLayerRecursively(exteriorRoot.transform, DriverHiddenLayer);
@@ -190,81 +197,136 @@ namespace RealDrivingAcademy.EditorTools
 
         static Mesh BuildSedanBodyMesh()
         {
-            var sections = new[]
+            // CC0 Spectral GT RS source geometry profile.
+            // Source axes: +X front, Y lateral, Z vertical.
+            // Unity mapping used here: X lateral, Y vertical, +Z front.
+            var stations = new[]
             {
-                new BodySection(-2.18f, .76f, .38f, .68f, .78f),
-                new BodySection(-1.78f, .91f, .38f, .80f, .92f),
-                new BodySection(-1.18f, .94f, .38f, .88f, 1.32f),
-                new BodySection(-.48f, .96f, .38f, .92f, 1.52f),
-                new BodySection(.28f, .96f, .38f, .92f, 1.50f),
-                new BodySection(.92f, .93f, .38f, .87f, 1.28f),
-                new BodySection(1.48f, .90f, .40f, .79f, .93f),
-                new BodySection(2.08f, .80f, .42f, .70f, .77f)
+                new BodySection(-2.48f, .62f, .47f, .74f),
+                new BodySection(-2.28f, .84f, .44f, .84f),
+                new BodySection(-1.72f, .98f, .43f, .91f),
+                new BodySection(-.75f, 1.00f, .43f, .95f),
+                new BodySection(.35f, .99f, .44f, .98f),
+                new BodySection(1.25f, .95f, .45f, .94f),
+                new BodySection(1.95f, .82f, .46f, .83f),
+                new BodySection(2.34f, .67f, .49f, .70f),
+                new BodySection(2.47f, .52f, .51f, .62f)
             };
 
+            return BuildLoftMesh(
+                "T4_SpectralSedanBodyMesh",
+                stations,
+                28,
+                true,
+                MeshRoot + "/T4_SedanBody.asset");
+        }
+
+        static Mesh BuildCabinMesh()
+        {
+            var stations = new[]
+            {
+                new BodySection(-1.43f, .76f, .82f, 1.03f),
+                new BodySection(-1.10f, .80f, .84f, 1.30f),
+                new BodySection(-.65f, .82f, .86f, 1.43f),
+                new BodySection(.42f, .82f, .87f, 1.43f),
+                new BodySection(.88f, .75f, .84f, 1.28f),
+                new BodySection(1.05f, .66f, .82f, 1.04f)
+            };
+
+            return BuildLoftMesh(
+                "T4_SpectralCabinMesh",
+                stations,
+                24,
+                false,
+                MeshRoot + "/T4_SedanCabin.asset");
+        }
+
+        static Mesh BuildLoftMesh(
+            string meshName,
+            BodySection[] stations,
+            int sides,
+            bool flattenFloor,
+            string assetPath)
+        {
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
-            const int ringCount = 10;
 
-            for (int s = 0; s < sections.Length; s++)
+            for (int s = 0; s < stations.Length; s++)
             {
-                BodySection section = sections[s];
-                float w = section.halfWidth;
-                float midY = Mathf.Lerp(section.lowerY, section.shoulderY, .55f);
+                BodySection section = stations[s];
+                float center = (section.lowerY + section.topY) * .5f;
+                float radius = (section.topY - section.lowerY) * .5f;
 
-                vertices.Add(new Vector3(-w * .82f, section.lowerY, section.z));
-                vertices.Add(new Vector3(-w, midY, section.z));
-                vertices.Add(new Vector3(-w * .96f, section.shoulderY, section.z));
-                vertices.Add(new Vector3(-w * .72f, Mathf.Lerp(section.shoulderY, section.topY, .58f), section.z));
-                vertices.Add(new Vector3(-w * .43f, section.topY, section.z));
-                vertices.Add(new Vector3(w * .43f, section.topY, section.z));
-                vertices.Add(new Vector3(w * .72f, Mathf.Lerp(section.shoulderY, section.topY, .58f), section.z));
-                vertices.Add(new Vector3(w * .96f, section.shoulderY, section.z));
-                vertices.Add(new Vector3(w, midY, section.z));
-                vertices.Add(new Vector3(w * .82f, section.lowerY, section.z));
-            }
-
-            for (int s = 0; s < sections.Length - 1; s++)
-            {
-                int a = s * ringCount;
-                int b = (s + 1) * ringCount;
-
-                for (int i = 0; i < ringCount; i++)
+                for (int i = 0; i < sides; i++)
                 {
-                    int next = (i + 1) % ringCount;
-                    AddQuad(triangles, a + i, a + next, b + next, b + i);
+                    float angle = Mathf.PI * 2f * i / sides;
+                    float lateral = section.halfWidth * Mathf.Sin(angle);
+                    float vertical = center + radius * Mathf.Cos(angle);
+
+                    if (flattenFloor && vertical < center - radius * .55f)
+                        vertical = section.lowerY + (vertical - section.lowerY) * .28f;
+
+                    vertices.Add(new Vector3(lateral, vertical, section.z));
                 }
             }
 
-            int rearCenter = vertices.Count;
-            BodySection rear = sections[0];
-            vertices.Add(new Vector3(0f, (rear.lowerY + rear.topY) * .5f, rear.z));
-
-            int frontCenter = vertices.Count;
-            BodySection front = sections[sections.Length - 1];
-            vertices.Add(new Vector3(0f, (front.lowerY + front.topY) * .5f, front.z));
-
-            for (int i = 0; i < ringCount; i++)
+            // The ring order is clockwise when viewed from +Z.
+            // Reverse the old winding so normals face OUTSIDE the vehicle.
+            for (int s = 0; s < stations.Length - 1; s++)
             {
-                int next = (i + 1) % ringCount;
+                int aRing = s * sides;
+                int bRing = (s + 1) * sides;
 
-                triangles.Add(rearCenter);
-                triangles.Add(next);
-                triangles.Add(i);
+                for (int i = 0; i < sides; i++)
+                {
+                    int next = (i + 1) % sides;
+                    int a = aRing + i;
+                    int b = aRing + next;
+                    int cc = bRing + next;
+                    int d = bRing + i;
 
-                int start = (sections.Length - 1) * ringCount;
-                triangles.Add(frontCenter);
-                triangles.Add(start + i);
-                triangles.Add(start + next);
+                    triangles.Add(a);
+                    triangles.Add(cc);
+                    triangles.Add(b);
+
+                    triangles.Add(a);
+                    triangles.Add(d);
+                    triangles.Add(cc);
+                }
             }
 
-            var mesh = new Mesh { name = "T4_SedanBodyMesh" };
+            BodySection rear = stations[0];
+            int rearCenter = vertices.Count;
+            vertices.Add(new Vector3(0f, (rear.lowerY + rear.topY) * .5f, rear.z));
+
+            BodySection front = stations[stations.Length - 1];
+            int frontCenter = vertices.Count;
+            vertices.Add(new Vector3(0f, (front.lowerY + front.topY) * .5f, front.z));
+
+            for (int i = 0; i < sides; i++)
+            {
+                int next = (i + 1) % sides;
+
+                // Rear cap outward = -Z.
+                triangles.Add(rearCenter);
+                triangles.Add(i);
+                triangles.Add(next);
+
+                // Front cap outward = +Z.
+                int start = (stations.Length - 1) * sides;
+                triangles.Add(frontCenter);
+                triangles.Add(start + next);
+                triangles.Add(start + i);
+            }
+
+            var mesh = new Mesh { name = meshName };
             mesh.SetVertices(vertices);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
+            mesh.RecalculateTangents();
             mesh.RecalculateBounds();
 
-            return SaveMeshAsset(mesh, MeshRoot + "/T4_SedanBody.asset");
+            return SaveMeshAsset(mesh, assetPath);
         }
 
         static Mesh BuildTorusMesh()
@@ -347,6 +409,39 @@ namespace RealDrivingAcademy.EditorTools
 
             CreateBox(parent, "BumperFront", new Vector3(0f, .45f, 2.14f), new Vector3(1.67f, .11f, .07f), chrome);
             CreateBox(parent, "BumperRear", new Vector3(0f, .46f, -2.21f), new Vector3(1.67f, .11f, .07f), chrome);
+        }
+
+        static void CreateSpectralExteriorDetails(Transform parent)
+        {
+            // Details adapted from the CC0 Spectral GT RS procedural source.
+            CreateBox(parent, "HoodCenterPanel", new Vector3(0f, .985f, 1.42f), new Vector3(1.45f, .035f, 1.08f), paint);
+            CreateBox(parent, "FrontSplitter", new Vector3(0f, .47f, 2.43f), new Vector3(1.92f, .065f, .34f), rubber);
+            CreateBox(parent, "RearDiffuser", new Vector3(0f, .48f, -2.38f), new Vector3(1.78f, .11f, .28f), rubber);
+
+            CreateBox(parent, "SideSkirt_L", new Vector3(-1.015f, .47f, -.15f), new Vector3(.12f, .12f, 2.95f), rubber);
+            CreateBox(parent, "SideSkirt_R", new Vector3(1.015f, .47f, -.15f), new Vector3(.12f, .12f, 2.95f), rubber);
+
+            CreateBox(parent, "WingPost_L", new Vector3(-.54f, 1.02f, -1.93f), new Vector3(.08f, .34f, .08f), rubber);
+            CreateBox(parent, "WingPost_R", new Vector3(.54f, 1.02f, -1.93f), new Vector3(.08f, .34f, .08f), rubber);
+            CreateBox(parent, "ActiveWingBlade", new Vector3(0f, 1.22f, -2.00f), new Vector3(1.68f, .11f, .20f), rubber);
+
+            for (int i = -2; i <= 2; i++)
+                CreateBox(parent, "FrontGrilleBar_" + i, new Vector3(i * .22f, .64f, 2.455f), new Vector3(.025f, .13f, .05f), chrome);
+
+            CreateExhaust(parent, "Exhaust_L", -.56f);
+            CreateExhaust(parent, "Exhaust_R", .56f);
+        }
+
+        static void CreateExhaust(Transform parent, string name, float x)
+        {
+            var outer = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            outer.name = name;
+            outer.transform.SetParent(parent, false);
+            outer.transform.localPosition = new Vector3(x, .57f, -2.48f);
+            outer.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            outer.transform.localScale = new Vector3(.105f, .075f, .105f);
+            outer.GetComponent<Renderer>().sharedMaterial = chrome;
+            Object.DestroyImmediate(outer.GetComponent<Collider>());
         }
 
         static void CreateInterior(Transform parent, GameObject carRoot)
