@@ -33,6 +33,7 @@ checks = {
     "chase camera exterior": 'camera.cullingMask |= 1 << DriverHiddenLayer' in realism,
     "smooth body mesh": "BuildSedanBodyMesh" in realism and "T4_SedanBody.asset" in realism,
     "Spectral GT source profile": "T4_SpectralSedanBodyMesh" in realism and "T4_SpectralCabinMesh" in realism,
+    "four-value BodySection constructor": "public BodySection(float z, float halfWidth, float lowerY, float topY)" in realism,
     "outward mesh winding": "normals face OUTSIDE" in realism and "triangles.Add(cc)" in realism,
     "separate cabin shell": '"CabinRoof"' in realism and "BuildCabinMesh" in realism,
     "spectral exterior details": "CreateSpectralExteriorDetails" in realism and '"ActiveWingBlade"' in realism,
