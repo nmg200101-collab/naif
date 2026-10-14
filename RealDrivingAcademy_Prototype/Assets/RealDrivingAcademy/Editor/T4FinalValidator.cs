@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -55,9 +56,11 @@ namespace RealDrivingAcademy.EditorTools
                         failures.Add("VisualModel_Old must be hidden.");
 
                     if (visualLayer.realisticVisualRoot == null)
-                        failures.Add("Sedan_Realistic reference is missing.");
+                        failures.Add("Production visual root reference is missing.");
                     else if (!visualLayer.realisticVisualRoot.activeSelf)
-                        failures.Add("Sedan_Realistic must be active.");
+                        failures.Add("Production visual root must be active.");
+                    else if (visualLayer.realisticVisualRoot.name != "ProductionCar_Real")
+                        failures.Add("VehicleVisualLayer is not pointing to ProductionCar_Real.");
                 }
 
                 Transform production = car.transform.Find("ProductionCar_Real");
@@ -188,8 +191,8 @@ namespace RealDrivingAcademy.EditorTools
                 return;
             }
 
-            if (!wheel.name.Contains("Realistic"))
-                failures.Add(label + " wheel is still using prototype geometry.");
+            if (!wheel.name.StartsWith("ProductionWheel_", StringComparison.Ordinal))
+                failures.Add(label + " wheel is not bound to the production GLB wheel group.");
         }
     }
 }
