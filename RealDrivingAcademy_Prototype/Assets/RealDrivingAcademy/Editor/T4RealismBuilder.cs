@@ -373,6 +373,39 @@ namespace RealDrivingAcademy.EditorTools
 
             CreateBox(interiorRoot.transform, "InstrumentCluster", new Vector3(-.47f, 1.10f, .39f), new Vector3(.44f, .18f, .06f), rubber);
             CreateBox(interiorRoot.transform, "Infotainment", new Vector3(.22f, 1.08f, .47f), new Vector3(.42f, .20f, .055f), rubber);
+
+            var seatAnchor = new GameObject("DriverSeatAnchor_T4").transform;
+            seatAnchor.SetParent(interiorRoot.transform, false);
+            seatAnchor.localPosition = new Vector3(-.46f, .82f, -.52f);
+
+            var leftHand = new GameObject("LeftHandTarget").transform;
+            leftHand.SetParent(steeringRoot.transform, false);
+            leftHand.localPosition = new Vector3(-.17f, .12f, -.02f);
+            leftHand.localRotation = Quaternion.Euler(0f, 0f, 18f);
+
+            var rightHand = new GameObject("RightHandTarget").transform;
+            rightHand.SetParent(steeringRoot.transform, false);
+            rightHand.localPosition = new Vector3(.17f, .12f, -.02f);
+            rightHand.localRotation = Quaternion.Euler(0f, 0f, -18f);
+
+            var leftFoot = new GameObject("LeftFootTarget").transform;
+            leftFoot.SetParent(interiorRoot.transform, false);
+            leftFoot.localPosition = new Vector3(-.55f, .32f, .62f);
+
+            var rightFoot = new GameObject("RightFootTarget").transform;
+            rightFoot.SetParent(interiorRoot.transform, false);
+            rightFoot.localPosition = new Vector3(-.24f, .32f, .62f);
+
+            var rigAnchors = carRoot.GetComponent<DriverRigAnchors>();
+            if (rigAnchors == null)
+                rigAnchors = carRoot.AddComponent<DriverRigAnchors>();
+
+            rigAnchors.seatAnchor = seatAnchor;
+            rigAnchors.headAnchor = carRoot.transform.Find("DriverHeadAnchor");
+            rigAnchors.leftHandTarget = leftHand;
+            rigAnchors.rightHandTarget = rightHand;
+            rigAnchors.leftFootTarget = leftFoot;
+            rigAnchors.rightFootTarget = rightFoot;
         }
 
         static void CreateSeat(Transform parent, string name, Vector3 localPosition)
