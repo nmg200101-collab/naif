@@ -29,14 +29,16 @@ namespace RealDrivingAcademy.EditorTools
             CreateMaterials();
             CreateLighting();
             CreateWorld();
+            T4RealismBuilder.ApplyEnvironment();
             var car = CreateTrainingCar();
+            T4RealismBuilder.Apply(car.gameObject);
             CreateTrainingSystems(car);
             CreateUI(car);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             Selection.activeGameObject = car.gameObject;
             EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath));
-            Debug.Log("Stage 2 prototype generated. Open the scene and press Play.");
+            Debug.Log("RDA T4 realism scene generated. Physics preserved; realistic visual layer enabled.");
         }
 
         static void CreateMaterials()
