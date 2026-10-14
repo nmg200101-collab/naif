@@ -47,6 +47,15 @@ namespace RealDrivingAcademy.EditorTools
                 this.shoulderY = shoulderY;
                 this.topY = topY;
             }
+
+            public BodySection(float z, float halfWidth, float lowerY, float topY)
+            {
+                this.z = z;
+                this.halfWidth = halfWidth;
+                this.lowerY = lowerY;
+                this.shoulderY = Mathf.Lerp(lowerY, topY, 0.62f);
+                this.topY = topY;
+            }
         }
 
         public static void ApplyEnvironment()
