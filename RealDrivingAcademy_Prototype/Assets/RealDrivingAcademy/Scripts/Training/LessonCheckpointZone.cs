@@ -9,6 +9,9 @@ namespace RealDrivingAcademy.Training
         public DrivingLessonManager lesson;
         public string checkpointId = "T3_Checkpoint_01";
         public bool consumeOnce = true;
+        public bool requireLeftIndicator = true;
+        public int missingIndicatorPenalty = 3;
+        public DrivingViolationSystem violations;
 
         bool consumed;
 
@@ -24,6 +27,22 @@ namespace RealDrivingAcademy.Training
 
             var car = other.GetComponentInParent<RealisticCarController>();
             if (car == null || lesson == null || car != lesson.car) return;
+
+            if (violations == null)
+                violations = car.GetComponent<DrivingViolationSystem>();
+
+            if (requireLeftIndicator &&
+                lesson.systems != null &&
+                !lesson.systems.leftIndicator &&
+                !lesson.systems.hazardLights &&
+                violations != null)
+            {
+                violations.AddViolation(
+                    ViolationType.NoIndicator,
+                    missingIndicatorPenalty,
+                    "اعبر نقطة التدريب بعد تشغيل الإشارة المناسبة.",
+                    2f);
+            }
 
             lesson.MarkCheckpoint(checkpointId);
             consumed = true;
