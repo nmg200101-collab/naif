@@ -8,6 +8,6 @@
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.ugui": "1.0.0",
-    "org.khronos.unitygltf": "https://github.com/KhronosGroup/UnityGLTF.git#release/2.14.1"
+    "com.unity.cloud.gltfast": "5.2.0"
   }
 }
