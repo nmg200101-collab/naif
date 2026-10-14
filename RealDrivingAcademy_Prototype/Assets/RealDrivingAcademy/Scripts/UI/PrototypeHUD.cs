@@ -15,6 +15,7 @@ namespace RealDrivingAcademy.UI
         public Text gearText;
         public Text scoreText;
         public Text lessonText;
+        public Text lessonProgressText;
         public Text warningText;
         public Text systemStatusText;
         public Text driveDebugText;
@@ -62,6 +63,14 @@ namespace RealDrivingAcademy.UI
                 if (gearText != null) gearText.text = car.selectedGear < 0 ? "R" : car.selectedGear == 0 ? "N" : car.selectedGear.ToString();
             }
             if (scoreText != null && violations != null) scoreText.text = "Score: " + violations.score;
+
+            if (lessonProgressText != null && lesson != null)
+            {
+                int shownStep = lesson.IsCompleted ? lesson.TotalSteps : Mathf.Min(lesson.TotalSteps, lesson.CompletedSteps + 1);
+                lessonProgressText.text = lesson.IsCompleted
+                    ? "Lesson 100%"
+                    : "Lesson " + shownStep + "/" + lesson.TotalSteps;
+            }
 
             if (systemStatusText != null && car != null)
             {
