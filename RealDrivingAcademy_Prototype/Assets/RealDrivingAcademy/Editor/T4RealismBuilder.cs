@@ -169,6 +169,14 @@ namespace RealDrivingAcademy.EditorTools
             layer.useRealisticVisuals = true;
             layer.Apply();
 
+            bool productionApplied = T4ProductionCarAdapter.TryApply(carRoot);
+            if (!productionApplied)
+            {
+                Debug.LogWarning(
+                    "RDA T4 production GLB is not available yet. " +
+                    "The procedural model remains only as a fallback and will not pass T4 validation.");
+            }
+
             var steeringVisual = carRoot.GetComponent<SteeringWheelVisual>();
             if (steeringVisual != null)
                 layer.steeringWheel = steeringVisual.steeringWheel;
