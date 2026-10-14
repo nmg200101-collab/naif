@@ -362,9 +362,12 @@ namespace RealDrivingAcademy.EditorTools
             var lessonProgress=Text(canvas.transform,"LessonProgress",new Vector2(0,-56),new Vector2(320,40),22,TextAnchor.MiddleCenter,"Lesson 1/9"); Anchor(lessonProgress.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var lesson=Text(canvas.transform,"Lesson",new Vector2(0,-100),new Vector2(900,68),28,TextAnchor.MiddleCenter,"Driving lesson"); Anchor(lesson.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var warning=Text(canvas.transform,"Warning",new Vector2(0,-170),new Vector2(900,62),26,TextAnchor.MiddleCenter,""); Anchor(warning.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
+            var result=Text(canvas.transform,"LessonResult",new Vector2(0,-225),new Vector2(1000,54),26,TextAnchor.MiddleCenter,""); Anchor(result.rectTransform,new Vector2(.5f,1),new Vector2(.5f,1));
             var systemsStatus=Text(canvas.transform,"SystemsStatus",new Vector2(20,-68),new Vector2(1100,42),22,TextAnchor.MiddleLeft,"HB"); Anchor(systemsStatus.rectTransform,new Vector2(0,1),new Vector2(0,1));
             var driveDebug=Text(canvas.transform,"DriveDebug",new Vector2(20,-108),new Vector2(1200,48),22,TextAnchor.MiddleLeft,"DRIVE DEBUG"); Anchor(driveDebug.rectTransform,new Vector2(0,1),new Vector2(0,1)); driveDebug.gameObject.SetActive(false);
-            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=Object.FindObjectOfType<DrivingLessonManager>(); hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.lessonProgressText=lessonProgress; hud.warningText=warning; hud.systemStatusText=systemsStatus; hud.driveDebugText=driveDebug;
+            var lessonManager=Object.FindObjectOfType<DrivingLessonManager>();
+            var hud=canvasGO.AddComponent<PrototypeHUD>(); hud.car=refs.car; hud.violations=refs.violations; hud.lesson=lessonManager; hud.speedText=speed; hud.rpmText=rpm; hud.gearText=gear; hud.scoreText=score; hud.lessonText=lesson; hud.lessonProgressText=lessonProgress; hud.warningText=warning; hud.systemStatusText=systemsStatus; hud.driveDebugText=driveDebug;
+            var resultController=canvasGO.AddComponent<TrainingResultController>(); resultController.lesson=lessonManager; resultController.violations=refs.violations; resultController.resultText=result; resultController.lessonId="training_basic_01"; resultController.passingScore=70;
 
             // Steering wheel touch area
             var steering=Panel(canvas.transform,"Steering",new Vector2(60,50),new Vector2(420,420),new Color(0.08f,0.08f,0.08f,.55f)); Anchor(steering,new Vector2(0,0),new Vector2(0,0));
