@@ -166,6 +166,7 @@ namespace RealDrivingAcademy.EditorTools
             var car=root.AddComponent<RealisticCarController>();
             var safetyAssist=root.AddComponent<VehicleSafetyAssist>(); safetyAssist.car=car;
             var violations=root.AddComponent<DrivingViolationSystem>(); violations.car=car; violations.systems=systems;
+            var collisionPenalty=root.AddComponent<VehicleCollisionPenalty>(); collisionPenalty.violations=violations;
             var cfg=ScriptableObject.CreateInstance<VehicleConfig>(); cfg.vehicleName="Training Sedan Stage 2"; cfg.mass=1450f; cfg.centerOfMass=new Vector3(0f,.34f,-.05f); cfg.maxEngineTorque=245f; cfg.maxSteerAngle=34f; cfg.fullSteerUntilKph=18f; cfg.reducedSteerAtKph=80f; cfg.steeringAssistAtTopSpeed=.38f; cfg.launchTorqueMultiplier=.62f; cfg.reverseTorqueMultiplier=.55f; cfg.launchAssistEndKph=28f; cfg.maxReverseSpeedKph=25f; cfg.safeDirectionChangeSpeedKph=3f; cfg.coastBrakeTorque=110f; cfg.maxSpeedKph=165f; cfg.automaticTransmission=true;
             if (!AssetDatabase.IsValidFolder("Assets/RealDrivingAcademy/Configs")) AssetDatabase.CreateFolder("Assets/RealDrivingAcademy","Configs");
             const string cfgPath = "Assets/RealDrivingAcademy/Configs/TrainingSedan_Stage2.asset";
@@ -339,7 +340,7 @@ namespace RealDrivingAcademy.EditorTools
             CreateCube("LessonCheckpointTop",new Vector3(0f,2.9f,28f),new Vector3(11.8f,.18f,.18f),yellowMat,false);
             var checkpoint=new GameObject("LessonCheckpointZone"); checkpoint.transform.position=new Vector3(0f,1.2f,28f);
             var checkpointCollider=checkpoint.AddComponent<BoxCollider>(); checkpointCollider.isTrigger=true; checkpointCollider.size=new Vector3(12f,2.5f,1.5f);
-            var checkpointZone=checkpoint.AddComponent<LessonCheckpointZone>(); checkpointZone.lesson=lm; checkpointZone.checkpointId="T3_GATE_01";
+            var checkpointZone=checkpoint.AddComponent<LessonCheckpointZone>(); checkpointZone.lesson=lm; checkpointZone.violations=refs.violations; checkpointZone.checkpointId="T3_GATE_01";
 
             // T3 stop target before the stop line / intersection.
             CreateCube("LessonStopTarget",new Vector3(0f,.235f,47.5f),new Vector3(10f,.025f,5f),greenMat,false);
