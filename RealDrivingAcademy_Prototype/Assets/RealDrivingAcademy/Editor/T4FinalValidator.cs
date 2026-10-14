@@ -58,7 +58,17 @@ namespace RealDrivingAcademy.EditorTools
                 }
                 else
                 {
-                    var body = realistic.Find("SedanBody");
+                    var exterior = realistic.Find("Exterior_DriverHidden");
+                    if (exterior == null)
+                    {
+                        failures.Add("Exterior_DriverHidden hierarchy not found.");
+                    }
+                    else if (exterior.gameObject.layer != 2)
+                    {
+                        failures.Add("Exterior_DriverHidden must use layer 2 for driver-camera culling.");
+                    }
+
+                    var body = realistic.Find("Exterior_DriverHidden/SedanBody");
                     if (body == null)
                     {
                         failures.Add("SedanBody not found.");
@@ -76,11 +86,11 @@ namespace RealDrivingAcademy.EditorTools
                     }
 
                     RequireChild(realistic, "Interior", failures);
-                    RequireChild(realistic, "Windshield", failures);
-                    RequireChild(realistic, "Wheel_FL_Realistic", failures);
-                    RequireChild(realistic, "Wheel_FR_Realistic", failures);
-                    RequireChild(realistic, "Wheel_RL_Realistic", failures);
-                    RequireChild(realistic, "Wheel_RR_Realistic", failures);
+                    RequireChild(realistic, "Exterior_DriverHidden/Windshield", failures);
+                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_FL_Realistic", failures);
+                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_FR_Realistic", failures);
+                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_RL_Realistic", failures);
+                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_RR_Realistic", failures);
                 }
 
                 if (car.frontAxle == null || car.rearAxle == null)
@@ -113,9 +123,22 @@ namespace RealDrivingAcademy.EditorTools
                 else
                 {
                     if (cameraRig.driverCamera == null || !cameraRig.driverCamera.allowHDR)
+                    {
                         failures.Add("Driver camera HDR is not enabled.");
+                    }
+                    else if ((cameraRig.driverCamera.cullingMask & (1 << 2)) != 0)
+                    {
+                        failures.Add("Driver camera must hide the exterior visual layer.");
+                    }
+
                     if (cameraRig.chaseCamera == null || !cameraRig.chaseCamera.allowHDR)
+                    {
                         failures.Add("Chase camera HDR is not enabled.");
+                    }
+                    else if ((cameraRig.chaseCamera.cullingMask & (1 << 2)) == 0)
+                    {
+                        failures.Add("Chase camera must render the exterior visual layer.");
+                    }
                 }
             }
 
