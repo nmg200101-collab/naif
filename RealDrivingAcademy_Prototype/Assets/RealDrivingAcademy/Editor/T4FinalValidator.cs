@@ -16,6 +16,15 @@ namespace RealDrivingAcademy.EditorTools
         [MenuItem("Real Driving Academy/T4/Build & Validate Realism Stage")]
         public static void BuildAndValidate()
         {
+            if (!T4ProductionAssetInstaller.EnsureInstalled())
+            {
+                EditorUtility.DisplayDialog(
+                    "RDA T4",
+                    "Production car could not be downloaded/imported. T4 validation stopped.",
+                    "OK");
+                return;
+            }
+
             T1FoundationBuilder.BuildAllScenes();
             EditorSceneManager.OpenScene(TrainingScenePath);
             ValidateRealismStage();
@@ -51,47 +60,32 @@ namespace RealDrivingAcademy.EditorTools
                         failures.Add("Sedan_Realistic must be active.");
                 }
 
-                Transform realistic = car.transform.Find("Sedan_Realistic");
-                if (realistic == null)
+                Transform production = car.transform.Find("ProductionCar_Real");
+                if (production == null)
                 {
-                    failures.Add("Sedan_Realistic hierarchy not found.");
+                    failures.Add(
+                        "ProductionCar_Real hierarchy not found. " +
+                        "The procedural fallback is not accepted as the final T4 vehicle.");
                 }
                 else
                 {
-                    var exterior = realistic.Find("Exterior_DriverHidden");
-                    if (exterior == null)
-                    {
-                        failures.Add("Exterior_DriverHidden hierarchy not found.");
-                    }
-                    else if (exterior.gameObject.layer != 2)
-                    {
-                        failures.Add("Exterior_DriverHidden must use layer 2 for driver-camera culling.");
-                    }
+                    int rendererCount = production.GetComponentsInChildren<Renderer>(true).Length;
+                    if (rendererCount < 80)
+                        failures.Add(
+                            "Production car imported with too few renderers: " +
+                            rendererCount);
 
-                    var body = realistic.Find("Exterior_DriverHidden/SedanBody");
-                    if (body == null)
+                    if (production.Find("SPECTRAL_GT_ROOT") == null &&
+                        production.GetComponentsInChildren<Transform>(true)
+                            .All(t => t.name != "SPECTRAL_GT_ROOT"))
                     {
-                        failures.Add("SedanBody not found.");
+                        failures.Add("Spectral GT production root not found in imported GLB.");
                     }
-                    else
-                    {
-                        var filter = body.GetComponent<MeshFilter>();
-                        var renderer = body.GetComponent<MeshRenderer>();
-
-                        if (filter == null || filter.sharedMesh == null)
-                            failures.Add("SedanBody mesh is missing.");
-
-                        if (renderer == null || renderer.sharedMaterial == null)
-                            failures.Add("SedanBody material is missing.");
-                    }
-
-                    RequireChild(realistic, "Interior", failures);
-                    RequireChild(realistic, "Exterior_DriverHidden/Windshield", failures);
-                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_FL_Realistic", failures);
-                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_FR_Realistic", failures);
-                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_RL_Realistic", failures);
-                    RequireChild(realistic, "Exterior_DriverHidden/Wheel_RR_Realistic", failures);
                 }
+
+                Transform procedural = car.transform.Find("Sedan_Realistic");
+                if (procedural != null && procedural.gameObject.activeSelf)
+                    failures.Add("Procedural T4 fallback must be hidden when production GLB is installed.");
 
                 if (car.frontAxle == null || car.rearAxle == null)
                 {
@@ -107,9 +101,10 @@ namespace RealDrivingAcademy.EditorTools
 
                 var steering = car.GetComponent<SteeringWheelVisual>();
                 if (steering == null || steering.steeringWheel == null)
-                    failures.Add("Realistic steering visual reference is missing.");
-                else if (!steering.steeringWheel.name.Contains("Realistic"))
-                    failures.Add("SteeringWheelVisual is still using the prototype steering wheel.");
+                    failures.Add("Production steering visual reference is missing.");
+                else if (steering.steeringWheel.name != "STEERING_INPUT_CTRL" &&
+                         steering.steeringWheel.name != "Steering_Wheel")
+                    failures.Add("SteeringWheelVisual is not bound to the production GLB steering.");
 
                 var anchors = car.GetComponent<DriverRigAnchors>();
                 if (anchors == null || !anchors.IsReady)
@@ -166,7 +161,7 @@ namespace RealDrivingAcademy.EditorTools
             if (failures.Count == 0)
             {
                 const string pass =
-                    "RDA T4 EDITOR VALIDATION PASSED: realistic sedan visual layer, PBR materials, cockpit anchors, wheels, cameras and environment pass are valid.";
+                    "RDA T4 EDITOR VALIDATION PASSED: production GLB car, wheel/steering bindings, cockpit, cameras and environment are valid.";
 
                 Debug.Log(pass);
                 EditorUtility.DisplayDialog("RDA T4", pass + "\n\nProceed to the visual runtime test.", "OK");
