@@ -5,7 +5,7 @@
 </style></head><body>
 <header><div class="top">المعهد العالي لإعداد وتأهيل المعلمين • تخصص معلم صف • فرع محور الرباط</div><h1>التقويم الإلكتروني الشامل</h1><p>مقرر مهارات عربية (١) — أستاذ المقرر: محمد حسن العامري</p></header>
 <main>
-<section id="start" class="panel"><span class="pill">تقويم للمحتوى الذي دُرِّس</span><h2>تعليمات التقويم</h2><p>يتكوّن الاختبار من <strong>٥٠ سؤالًا</strong>: ٢٥ صح أو خطأ، و٢٥ اختيارًا من متعدد. درجة واحدة لكل سؤال، والدرجة النهائية من ٥٠.</p><div class="info">أجب عن جميع الأسئلة، ثم راجع إجاباتك واضغط «تسليم الإجابات وتصحيحها». ستظهر درجتك والإجابات الصحيحة والخاطئة فورًا.</div><label class="field" for="student">اسم الطالب الثلاثي <span style="color:#b2364a">*</span></label><input id="student" class="text" autocomplete="name" maxlength="90" placeholder="اكتب اسمك الثلاثي" required><label class="field" for="group">المجموعة <span style="color:#b2364a">*</span></label><select id="group"><option value="">اختر مجموعتك</option><option value="المجموعة الأولى">المجموعة الأولى</option><option value="المجموعة الثانية">المجموعة الثانية</option></select><p class="muted">تُحسب النتيجة على جهاز الطالب. لا تُحفظ الأسماء والدرجات في قاعدة بيانات مركزية. يمكن مشاركة تقرير النتيجة بعد الانتهاء.</p><button class="primary" id="startBtn">ابدأ التقويم</button><p class="muted" id="startError" role="alert"></p></section>
+<section id="start" class="panel"><span class="pill">تقويم للمحتوى الذي دُرِّس</span><h2>تعليمات التقويم</h2><p>يتكوّن الاختبار من <strong>٥٠ سؤالًا</strong>: ٢٥ صح أو خطأ، و٢٥ اختيارًا من متعدد. درجة واحدة لكل سؤال، والدرجة النهائية من ٥٠.</p><div class="info">أجب عن جميع الأسئلة، ثم راجع إجاباتك واضغط «تسليم الإجابات وتصحيحها». ستظهر درجتك والإجابات الصحيحة والخاطئة فورًا.</div><label class="field" for="student">اسم الطالب الثلاثي <span style="color:#b2364a">*</span></label><input id="student" class="text" autocomplete="name" maxlength="90" placeholder="اكتب اسمك الثلاثي" required><p class="muted">تُحسب النتيجة على جهاز الطالب. لا تُحفظ الأسماء والدرجات في قاعدة بيانات مركزية. يمكن مشاركة تقرير النتيجة بعد الانتهاء.</p><button class="primary" id="startBtn">ابدأ التقويم</button><p class="muted" id="startError" role="alert"></p></section>
 <section id="quiz" class="panel hidden"><div class="row"><span id="counter" class="pill"></span><span id="topic" class="eyebrow"></span></div><div class="bar"><span id="barFill"></span></div><div id="answered" class="muted"></div><div id="type" class="eyebrow"></div><div id="prompt" class="question"></div><div id="choices" role="radiogroup" aria-label="الخيارات"></div><div class="row nav"><button class="secondary" id="prev">السؤال السابق</button><button class="primary" id="next">السؤال التالي</button></div><button class="outline" id="jumpReview" style="margin-top:12px;width:100%">مراجعة جميع الإجابات</button></section>
 <section id="review" class="panel hidden"><span class="pill">مراجعة قبل التسليم</span><h2>تأكد من إجاباتك</h2><p id="reviewCount"></p><p class="muted">اضغط على رقم أي سؤال للعودة إليه وتغيير إجابته.</p><div id="reviewGrid" class="grid"></div><div class="note">بعد الضغط على «تسليم الإجابات وتصحيحها» تُثبت النتيجة في هذه الجلسة ولا يمكنك تعديل الإجابات.</div><div class="row nav"><button class="secondary" id="backQuiz">العودة إلى الأسئلة</button><button class="primary" id="submitBtn">تسليم الإجابات وتصحيحها</button></div></section>
 <section id="result" class="panel hidden"><span class="pill">نتيجة التقويم</span><h2>تقرير الطالب</h2><div id="studentDisplay" class="info"></div><div id="score" class="score"></div><p id="scoreDetail" style="text-align:center;font-weight:800"></p><div class="result-action"><button id="copyBtn" class="secondary">نسخ تقرير النتيجة</button><button id="shareBtn" class="primary">مشاركة النتيجة عبر واتساب</button><button id="printBtn" class="outline">طباعة / حفظ PDF</button></div><h3>مراجعة الإجابات</h3><div id="records"></div><p class="muted">ملاحظة: الدرجة الإلكترونية تقويم لهذا المحتوى، ولا تُعد درجة رسمية إلا بعد اعتماد أستاذ المقرر.</p></section>
@@ -15,7 +15,7 @@ const QUESTIONS = [{"id":1,"t":"صح أو خطأ","q":"اللغة، وفق ال�
 
 (function(){
 "use strict";
-var answers=new Array(QUESTIONS.length).fill(null),index=0,student="",group="",locked=false,report="";
+var answers=new Array(QUESTIONS.length).fill(null),index=0,student="",locked=false,report="";
 function $(id){return document.getElementById(id)}
 function show(id){["start","quiz","review","result"].forEach(function(k){$(k).classList.toggle("hidden",k!==id)});window.scrollTo(0,0)}
 function count(){return answers.filter(function(a){return a!==null}).length}
@@ -35,17 +35,17 @@ $("submitBtn").disabled=n!==QUESTIONS.length;
 function grade(){
 if(locked||count()!==QUESTIONS.length)return;locked=true;
 var score=QUESTIONS.reduce(function(s,q,i){return s+(answers[i]===q.a?1:0)},0),percentage=Math.round(score*100/QUESTIONS.length);
-$("studentDisplay").textContent="الطالب: "+student+" | "+group+" | التاريخ: "+new Date().toLocaleDateString("ar-YE");
+$("studentDisplay").textContent="الطالب: "+student+" | التاريخ: "+new Date().toLocaleDateString("ar-YE");
 $("score").textContent=score+" / "+QUESTIONS.length;
 $("scoreDetail").textContent="النسبة: "+percentage+"٪ — الإجابات الصحيحة: "+score+" — الإجابات الخاطئة: "+(QUESTIONS.length-score);
-report="نتيجة التقويم الإلكتروني – مهارات عربية (١)\nاسم الطالب: "+student+"\nالمجموعة: "+group+"\nالدرجة: "+score+" من "+QUESTIONS.length+"\nالنسبة: "+percentage+"٪\nتاريخ الإكمال: "+new Date().toLocaleDateString("ar-YE")+"\nأستاذ المقرر: محمد حسن العامري";
+report="نتيجة التقويم الإلكتروني – مهارات عربية (١)\nاسم الطالب: "+student+"\nالدرجة: "+score+" من "+QUESTIONS.length+"\nالنسبة: "+percentage+"٪\nتاريخ الإكمال: "+new Date().toLocaleDateString("ar-YE")+"\nأستاذ المقرر: محمد حسن العامري";
 $("records").replaceChildren();QUESTIONS.forEach(function(q,i){var good=answers[i]===q.a;var box=document.createElement("div");box.className="record "+(good?"good":"bad");
 var h=document.createElement("div");h.className="status";h.textContent="السؤال "+(i+1)+" — "+(good?"صحيح ✓":"خطأ ✗");box.appendChild(h);
 var question=document.createElement("div");question.textContent=q.q;box.appendChild(question);
 var ans=document.createElement("div");ans.className="tiny";ans.textContent="إجابتك: "+q.o[answers[i]]+(good?"":" | الإجابة الصحيحة: "+q.o[q.a]);box.appendChild(ans);$("records").appendChild(box)});
 show("result");
 }
-$("startBtn").onclick=function(){var s=$("student").value.trim(),g=$("group").value;if(s.length<6){$("startError").textContent="يرجى كتابة الاسم الثلاثي بوضوح.";return}if(!g){$("startError").textContent="يرجى اختيار المجموعة.";return}student=s;group=g;$("startError").textContent="";show("quiz");render()};
+$("startBtn").onclick=function(){var s=$("student").value.trim();if(s.length<6){$("startError").textContent="يرجى كتابة الاسم الثلاثي بوضوح.";return}student=s;$("startError").textContent="";show("quiz");render()};
 $("prev").onclick=function(){if(index>0){index--;render();window.scrollTo(0,0)}};
 $("next").onclick=function(){if(index===QUESTIONS.length-1){review()}else{index++;render();window.scrollTo(0,0)}};
 $("jumpReview").onclick=review;$("backQuiz").onclick=function(){show("quiz");render()};
