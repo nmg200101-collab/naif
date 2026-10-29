@@ -28,7 +28,7 @@ function clearDraft(){try{localStorage.removeItem(STORAGE_KEY)}catch(_){}}
 function show(view){for(const k of ["start","quiz","review","result"])$(k).classList.toggle("hide",k!==view);window.scrollTo(0,0)}
 function render(){
  const q=QUESTIONS[idx];$("current").textContent="السؤال "+(idx+1)+" من ٣٠";$("topic").textContent=q.topic;$("kind").textContent=q.type;
- $("count").textContent="تمت الإجابة عن "+answered()+" من ٣٠ — تُحفظ الإجابات تلقائيًا على هذا المتصفح";
+ $("count").textContent="تمت الإجابة عن "+answered()+" من ٣٠ "+(autosaveOK?"— تُحفظ الإجابات تلقائيًا على هذا المتصفح":"— ⚠ تعذر الحفظ التلقائي؛ لا تغلق الصفحة");
  $("bar").style.width=(answered()*100/QUESTIONS.length)+"%";
  $("prompt").textContent=q.q;$("options").replaceChildren();
  q.opts.forEach((option,i)=>{const label=document.createElement("label"),input=document.createElement("input"),span=document.createElement("span");
