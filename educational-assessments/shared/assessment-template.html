@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>قالب التقويم الإلكتروني المشترك</title>
+<style>
+:root{font-family:system-ui,Tahoma,sans-serif;color:#183454;background:#f1f6fb}body{margin:0}header{background:#193c66;color:white;text-align:center;padding:24px 12px}header h1{font-size:1.6rem}header p{margin:8px}main{max-width:760px;margin:20px auto;background:white;padding:24px;border-radius:18px}label{display:block;margin:14px 0;font-weight:600}input,select,textarea{font:inherit;box-sizing:border-box;width:100%;padding:12px;border:1px solid #b8cad9;border-radius:9px;margin-top:5px}button{font:inherit;border:0;border-radius:10px;padding:13px 18px;background:#1476a5;color:white;cursor:pointer}button:disabled{opacity:.5}.question{border:1px solid #dae5ef;border-radius:12px;padding:15px;margin:14px 0}fieldset{border:0;padding:0}legend{font-weight:700} .choice{display:block;font-weight:400}.choice input{width:auto}#status{padding:12px;white-space:pre-wrap}.note{background:#e9f3fa;padding:14px;border-radius:10px}</style>
+</head>
+<body>
+<header><div id="institute">المعهد العالي لإعداد وتأهيل المعلمين — فرع رباط النهار — تخصص معلم صف</div><h1 id="heading">التقويم الإلكتروني</h1><p id="course"></p><p>أستاذ المقرر: محمد حسن العامري</p><p id="session"></p></header>
+<main>
+<p class="note">قالب موحد للاختبارات الجديدة. يحفظ الإجابات مؤقتًا على هذا المتصفح فقط، ولا يرسل درجات الطلاب إلى قاعدة بيانات إلا بعد ربط خادم آمن.</p>
+<section id="setup">
+<label>المقرر<select id="subject"><option value="مهارات عربية 1">مهارات عربية 1</option><option value="علم النفس التربوي">علم النفس التربوي</option></select></label>
+<label>عنوان المحاضرة<input id="lecture" value="المحاضرة الأولى"></label>
+<label>أسئلة الاختبار (JSON)<textarea id="questions" rows="8" placeholder='[{"type":"mcq","text":"السؤال","options":["أ","ب"],"answer":0},{"type":"tf","text":"عبارة صحيحة","answer":true}]'></textarea></label>
+<button id="build">إنشاء الاختبار</button>
+</section>
+<section id="exam" hidden><label>اسم الطالب الثلاثي<input id="student" autocomplete="name"></label><div id="questionList"></div><button id="submit">تسليم الإجابات</button><p id="status" role="status"></p></section>
+</main>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let quiz=[], key="";
+function save(){if(!key)return;const answers=quiz.map((q,i)=>{const checked=document.querySelector('input[name="q'+i+'"]:checked');return checked?checked.value:null});localStorage.setItem(key,JSON.stringify({name:$("student").value,answers}));}
+function render(){
+$("course").textContent="المقرر: "+$("subject").value;
+$("heading").textContent="التقويم الإلكتروني — "+$("subject").value;
+$("session").textContent=$("lecture").value+" | "+quiz.length+" سؤالًا";
+const list=$("questionList");list.replaceChildren();
+quiz.forEach((q,i)=>{const box=document.createElement("fieldset");box.className="question";const title=document.createElement("legend");title.textContent=(i+1)+". "+q.text;box.append(title);const choices=q.type==="tf"?["صح","خطأ"]:q.options;choices.forEach((c,j)=>{const label=document.createElement("label");label.className="choice";const input=document.createElement("input");input.type="radio";input.name="q"+i;input.value=String(j);input.addEventListener("change",save);label.append(input,document.createTextNode(" "+c));box.append(label)});list.append(box)});
+key="assessment-draft:"+$("subject").value+":"+$("lecture").value;
+try{const old=JSON.parse(localStorage.getItem(key)||"null");if(old){$("student").value=old.name||"";old.answers.forEach((v,i)=>{if(v!==null){const el=document.querySelector('input[name="q'+i+'"][value="'+v+'"]');if(el)el.checked=true}})}}catch(e){}
+$("setup").hidden=true;$("exam").hidden=false;
+}
+$("build").onclick=()=>{try{const q=JSON.parse($("questions").value);if(!Array.isArray(q)||!q.length||q.some(x=>!x.text||!["mcq","tf"].includes(x.type)||(x.type==="mcq"&&(!Array.isArray(x.options)||x.options.length<2))))throw Error("صيغة الأسئلة غير صحيحة");quiz=q;render()}catch(e){alert("تعذر إنشاء الاختبار: "+e.message)}};
+$("student").addEventListener("input",save);
+$("submit").onclick=()=>{if($("student").value.trim().split(/\s+/).length<3){$("status").textContent="يرجى إدخال الاسم الثلاثي.";return}const a=quiz.map((_,i)=>document.querySelector('input[name="q'+i+'"]:checked'));if(a.some(x=>!x)){$("status").textContent="يرجى الإجابة عن جميع الأسئلة.";return}save();$("status").textContent="حُفظت الإجابات محليًا فقط. لم تُرسل إلى الخادم. يلزم ربط قاعدة البيانات قبل استخدام الاختبار رسميًا."};
+</script></body></html>
