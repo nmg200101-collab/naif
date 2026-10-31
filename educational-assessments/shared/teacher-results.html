@@ -1,19 +1,130 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إدارة التقويم الإلكتروني</title><style>*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#19344b;font:16px/1.7 system-ui,Tahoma,Arial}main{max-width:850px;margin:auto;padding:18px}header,.panel{background:#fff;border-radius:16px;padding:20px;margin:12px 0;box-shadow:0 3px 15px #0e345510}h1{margin:0;font-size:25px}p{margin:6px 0;color:#596c7d}button,input{font:inherit;border-radius:10px;padding:12px;border:1px solid #b6c7d7}button{background:#176a9c;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.55}input{width:100%;margin:7px 0 12px}section[hidden]{display:none}body.compact td,body.compact th{padding:5px 4px;font-size:12px}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px;margin:0}.stat{font-weight:bold;margin:12px 0}table{width:100%;border-collapse:collapse;background:white}td,th{padding:10px 7px;text-align:right;border-bottom:1px solid #e4eaf0;font-size:14px}th{background:#e9f2f8}small{color:#607184}#msg{color:#a34520}.scroll{overflow:auto}nav{display:flex;background:white;border-radius:12px;overflow:hidden;margin:12px 0;position:sticky;top:0;z-index:2}nav button{flex:1;border-radius:0;background:white;color:#385b78;border-bottom:3px solid transparent;font-weight:bold;padding:12px 4px}nav button.active{color:#12669a;border-color:#12669a;background:#e9f5fd}.question{padding:12px 0;border-bottom:1px solid #e0e7ee}.muted{color:#607184}.link{display:inline-block;background:#176a9c;color:white;padding:10px 15px;border-radius:9px;text-decoration:none}.switch{width:auto}#settings label{display:block;margin:10px 0}</style></head><body><main><header><h1>إدارة التقويم الإلكتروني</h1><p>المعهد العالي لإعداد وتأهيل المعلمين — فرع رباط النهار</p><p>أستاذ المقرر: محمد حسن العامري</p></header><nav aria-label="أقسام التقويم"><button class="active" data-tab="questions">الأسئلة</button><button data-tab="report">الردود</button><button data-tab="settings">الإعدادات</button></nav><section class="panel" id="questions"><h2>الأسئلة</h2><p>تقويم المحاضرة الأولى — علم النفس التربوي</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section><section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث الردود عند فتح القسم</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>البريد المعتمد: mohamedalamiry8@gmail.com</p><small>هذه تفضيلات عرض على هذا الهاتف. إعدادات نشر التقويم وتصحيح الإجابات محفوظة على الخادم ولا تُعدّل هنا.</small></section><section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>البريد المعتمد: mohamedalamiry8@gmail.com</p><button id="send">إرسال رمز الدخول إلى البريد</button><div id="otpArea" hidden><label for="otp">أدخل رمز التحقق المرسل إلى بريدك</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="رمز التحقق"><button id="verify">تأكيد الدخول</button><p><small>إذا وصلتك رسالة تحتوي رابط دخول بدل الرمز، يلزم تفعيل قالب الرمز في إعدادات Supabase Auth.</small></p></div></section><section class="panel" id="report" hidden><h2>الردود</h2><div class="bar"><input id="search" placeholder="البحث باسم الطالب"><button id="refresh">تحديث</button><button id="logout">خروج</button></div><div class="stat" id="stats"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th></tr></thead><tbody id="rows"></tbody></table></div><p><small>تظهر المحاولات المتكررة كسجلات منفصلة. الأوقات بحسب توقيت اليمن. يتم عرض آخر 1000 محاولة كحد أقصى.</small></p></section><section class="panel" id="msg" role="status"></section></main><script type="module">
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#176a9c">
+<meta name="description" content="كشف نتائج الطلاب وتسليماتهم للأستاذ">
+<link rel="manifest" href="./teacher-results.webmanifest">
+<link rel="icon" href="./teacher-results-icon.svg" type="image/svg+xml">
+<title>نتائج طلابي</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#19344b;font:16px/1.7 system-ui,Tahoma,Arial}main{max-width:850px;margin:auto;padding:18px 14px calc(24px + env(safe-area-inset-bottom))}header,.panel{background:#fff;border-radius:16px;padding:20px;margin:12px 0;box-shadow:0 3px 15px #0e345510}header{border-top:4px solid #176a9c}h1{margin:0;font-size:25px}h2{margin:0 0 8px}p{margin:6px 0;color:#596c7d}button,input{font:inherit;border-radius:10px;padding:12px;border:1px solid #b6c7d7}button{background:#176a9c;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.55;cursor:wait}input{width:100%;margin:7px 0 12px}section[hidden]{display:none}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px;margin:0}.stat{font-weight:bold;margin:12px 0}.stats{display:flex;gap:8px;flex-wrap:wrap}.chip{background:#e9f2f8;padding:7px 11px;border-radius:999px;font-size:14px}table{width:100%;border-collapse:collapse;background:white}td,th{padding:10px 7px;text-align:right;border-bottom:1px solid #e4eaf0;font-size:14px;white-space:nowrap}th{background:#e9f2f8}small{color:#607184}#msg{color:#a34520;min-height:1.5em}.scroll{overflow:auto;border-radius:10px}nav{display:flex;background:white;border-radius:12px;overflow:hidden;margin:12px 0;position:sticky;top:0;z-index:2;box-shadow:0 2px 10px #0e345510}nav button{flex:1;border-radius:0;background:white;color:#385b78;border-bottom:3px solid transparent;font-weight:bold;padding:12px 4px}nav button.active{color:#12669a;border-color:#12669a;background:#e9f5fd}.question{padding:12px 0;border-bottom:1px solid #e0e7ee}.muted{color:#607184}.link{display:inline-block;background:#176a9c;color:white;padding:10px 15px;border-radius:9px;text-decoration:none}.switch{width:auto}.install{display:none;margin-top:12px;background:#13815c}.hint{padding:12px;background:#eff7fb;border-radius:10px}.empty{text-align:center;padding:22px;color:#607184}.danger{background:#fff4ef;color:#8d3d1e;padding:10px;border-radius:9px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>نتائج طلابي</h1>
+<p>المعهد العالي لإعداد وتأهيل المعلمين — فرع رباط النهار</p>
+<p>أستاذ المقرر: محمد حسن العامري</p>
+<button id="installApp" class="install" type="button">إضافة اختصار إلى شاشة الهاتف</button>
+</header>
+<nav aria-label="أقسام التقويم"><button class="active" data-tab="questions" aria-selected="true">الأسئلة</button><button data-tab="report" aria-selected="false">نتائج طلابي</button><button data-tab="settings" aria-selected="false">الإعدادات</button></nav>
+<section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>تقويم المحاضرة الأولى — علم النفس التربوي</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
+<section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث النتائج عند فتح القسم</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>البريد المعتمد: mohamedalamiry8@gmail.com</p><p class="hint">لا تُحفظ كلمة المرور. يحفظ Supabase جلسة الدخول في هذا المتصفح عبر اتصال HTTPS ويجددها تلقائيًا. استخدم اختصارك على هاتفك الشخصي، وسجّل الخروج عند استخدام جهاز مشترك.</p><small>إعدادات عرض الاختبار محفوظة على هذا الهاتف. نشر الأسئلة محفوظ على الخادم.</small></section>
+<section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>أدخل رمز التحقق المرسل إلى البريد المعتمد:</p><p><strong>mohamedalamiry8@gmail.com</strong></p><button id="send" type="button">إرسال رمز دخول</button><div id="otpArea" hidden><label for="otp">رمز التحقق</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="أدخل الرمز المرسل إلى بريدك"><button id="verify" type="button">تأكيد الدخول</button><p class="hint">يمكنك أيضًا فتح رابط الدخول الوارد في البريد على هذا الهاتف؛ سيعود بك مباشرة إلى الكشف.</p></div></section>
+<section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p></section>
+<section class="panel" id="msg" role="status" aria-live="polite"></section>
+</main>
+<script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
-const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-const $=id=>document.getElementById(id), email="mohamedalamiry8@gmail.com";let results=[];
+const EMAIL="mohamedalamiry8@gmail.com";
+const API="https://nicgczedldimtcnlawjo.supabase.co/functions/v1";
+const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"naif-teacher-results-auth-v1"}});
+const $=id=>document.getElementById(id);
+let results=[],tab="questions",loadSerial=0,installPrompt=null;
 const msg=s=>$("msg").textContent=s;
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-async function load(){msg("جاري تحميل النتائج...");const {data:{session}}=await db.auth.getSession();if(!session){$("report").hidden=true;$("login").hidden=false;msg("سجّل الدخول مرة واحدة، ثم سيفتح الكشف مباشرة في الزيارات التالية.");return;}
-$("login").hidden=true;$("report").hidden=false;
-try{const r=await fetch("https://nicgczedldimtcnlawjo.supabase.co/functions/v1/teacher-results-api",{headers:{Authorization:"Bearer "+session.access_token}});const d=await r.json();if(!r.ok)throw Error(d.error||"تعذر تحميل النتائج");results=d.results||[];render();msg("");}catch(e){msg("تعذر عرض الكشف: "+e.message);}}
-function render(){const q=$("search").value.trim().toLowerCase(),a=results.filter(x=>x.student_name?.toLowerCase().includes(q));$("stats").textContent="المحاولات: "+results.length+" | الطلاب بالأسماء المميزة: "+new Set(results.map(x=>x.student_name?.trim())).size+" | المعروض: "+a.length;$("rows").innerHTML=a.map(x=>"<tr><td>"+safe(x.student_name)+"</td><td>"+safe(x.score)+" / "+safe(x.total)+"</td><td>"+safe(new Date(x.submitted_at).toLocaleString("ar-YE",{timeZone:"Asia/Aden",dateStyle:"short",timeStyle:"short"}))+"</td></tr>").join("")||'<tr><td colspan="3">لا توجد نتائج مطابقة</td></tr>';}
-$("send").onclick=async()=>{msg("جاري إرسال رسالة الدخول...");$("send").disabled=true;try{const {error}=await db.auth.signInWithOtp({email,options:{shouldCreateUser:true,emailRedirectTo:location.origin+location.pathname}});if(error)throw error;$("otpArea").hidden=false;msg("تم طلب رسالة الدخول. افحص البريد الوارد والرسائل غير المرغوبة.");}catch(e){msg("تعذر إرسال الرسالة: "+e.message)}finally{$("send").disabled=false}};
-$("verify").onclick=async()=>{const token=$("otp").value.trim();if(!token){msg("أدخل الرمز أولًا");return}const {error}=await db.auth.verifyOtp({email,token,type:"email"});if(error)msg("الرمز غير صحيح أو منتهي الصلاحية: "+error.message);else await load()};
-$("refresh").onclick=load;$("search").oninput=render;$("logout").onclick=async()=>{await db.auth.signOut();await load()};const tabs=["questions","report","settings"];let tab="questions";
-function showTab(next){tab=next;document.querySelectorAll("nav button").forEach(b=>{b.classList.toggle("active",b.dataset.tab===next);b.setAttribute("aria-selected",String(b.dataset.tab===next))});$("questions").hidden=next!=="questions";$("settings").hidden=next!=="settings";$("report").hidden=next!=="report";$("login").hidden=true;if(next==="report"){load()}else msg("");}
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
-async function loadQuestions(){try{const r=await fetch("https://nicgczedldimtcnlawjo.supabase.co/functions/v1/assessment-api?quiz_id=psychology-lecture-1-30-v1");if(!r.ok)throw Error("تعذر جلب الأسئلة");const d=await r.json();const qs=d.questions||[];$("questionsList").innerHTML=qs.map((q,i)=>'<div class="question"><strong>'+(i+1)+'. '+safe(q.text)+'</strong><div class="muted">'+(q.options||[]).map((o,j)=>'<div>◯ '+safe(o)+'</div>').join("")+'</div></div>').join("")||"لا توجد أسئلة";}catch(e){$("questionsList").textContent="تعذر تحميل الأسئلة؛ يمكنك فتح رابط تقويم الطالب."}}
-$("autoRefresh").checked=localStorage.getItem("teacherAutoRefresh")!=="false";$("compact").checked=localStorage.getItem("teacherCompact")==="true";$("autoRefresh").onchange=e=>localStorage.setItem("teacherAutoRefresh",String(e.target.checked));$("compact").onchange=e=>{localStorage.setItem("teacherCompact",String(e.target.checked));document.body.classList.toggle("compact",e.target.checked)};document.body.classList.toggle("compact",$("compact").checked);
-db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_IN"&&tab==="report")setTimeout(load,0)});showTab("questions");loadQuestions();
-</script></body></html>
+async function load(){
+ const serial=++loadSerial;
+ msg("جارٍ التحقق من جلسة الأستاذ...");
+ const {data:{session},error:sessionError}=await db.auth.getSession();
+ if(serial!==loadSerial)return;
+ if(sessionError||!session){$("report").hidden=true;$("login").hidden=false;$("otpArea").hidden=true;msg("أرسل رمز الدخول إلى بريد الأستاذ المعتمد.");return}
+ $("login").hidden=true;$("report").hidden=false;
+ try{
+  const response=await fetch(API+"/teacher-results-api",{headers:{Authorization:"Bearer "+session.access_token}});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"تعذر تحميل النتائج");
+  if(serial!==loadSerial)return;
+  results=Array.isArray(data.results)?data.results:[];
+  render();
+  msg(data.limited?"يعرض الكشف آخر 1000 محاولة.":"");
+ }catch(error){
+  if(serial!==loadSerial)return;
+  results=[];render();
+  const detail=error?.message||"تعذر الاتصال بالخادم";
+  msg(detail==="Not authorized"?"هذا البريد لم يُؤكّد بعد أو لا يملك صلاحية الأستاذ. استخدم رابط التأكيد المرسل إلى بريدك ثم أعد الدخول.":"تعذر تحميل الكشف: "+detail);
+ }
+}
+function render(){
+ const query=$("search").value.trim().toLocaleLowerCase("ar");
+ const filtered=results.filter(row=>String(row.student_name||"").toLocaleLowerCase("ar").includes(query));
+ const names=new Set(results.map(row=>String(row.student_name||"").trim()).filter(Boolean));
+ $("stats").innerHTML='<span class="chip">المحاولات: '+results.length+'</span><span class="chip">الطلاب: '+names.size+'</span><span class="chip">المعروض: '+filtered.length+'</span>';
+ $("rows").innerHTML=filtered.map(row=>{
+  const date=new Date(row.submitted_at);
+  const submitted=Number.isNaN(date.getTime())?"—":date.toLocaleString("ar-YE",{timeZone:"Asia/Aden",dateStyle:"short",timeStyle:"short"});
+  return "<tr><td>"+safe(row.student_name)+"</td><td>"+safe(row.score)+" / "+safe(row.total)+"</td><td>"+safe(submitted)+"</td></tr>";
+ }).join("")||'<tr><td colspan="3" class="empty">لا توجد نتائج مطابقة</td></tr>';
+}
+$("send").onclick=async()=>{
+ $("send").disabled=true;msg("جارٍ إرسال رمز الدخول...");
+ try{
+  const {error}=await db.auth.signInWithOtp({email:EMAIL,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+  if(error)throw error;
+  $("otpArea").hidden=false;
+  msg("تم إرسال رسالة الدخول. افحص البريد الوارد والرسائل غير المرغوبة.");
+ }catch(error){msg("تعذر إرسال رمز الدخول: "+(error?.message||"تحقق من الاتصال"))}
+ finally{$("send").disabled=false}
+};
+$("verify").onclick=async()=>{
+ const token=$("otp").value.trim();
+ if(!token){msg("أدخل رمز التحقق أولًا.");return}
+ $("verify").disabled=true;msg("جارٍ تأكيد الرمز...");
+ try{
+  let result=await db.auth.verifyOtp({email:EMAIL,token,type:"email"});
+  if(result.error)result=await db.auth.verifyOtp({email:EMAIL,token,type:"signup"});
+  if(result.error)throw result.error;
+  $("otp").value="";
+  await load();
+ }catch(error){msg("تعذر تأكيد الرمز. تأكد من صحته وصلاحيته: "+(error?.message||""))}
+ finally{$("verify").disabled=false}
+};
+$("refresh").onclick=load;
+$("search").oninput=render;
+$("logout").onclick=async()=>{await db.auth.signOut();results=[];render();await load()};
+function showTab(next){
+ tab=next;
+ document.querySelectorAll("nav button").forEach(button=>{const active=button.dataset.tab===next;button.classList.toggle("active",active);button.setAttribute("aria-selected",String(active))});
+ $("questions").hidden=next!=="questions";$("settings").hidden=next!=="settings";$("report").hidden=next!=="report";
+ if(next==="report"){load()}else{$("login").hidden=true;msg("")}
+}
+document.querySelectorAll("nav button").forEach(button=>button.onclick=()=>showTab(button.dataset.tab));
+async function loadQuestions(){
+ try{
+  const response=await fetch(API+"/assessment-api?quiz_id=psychology-lecture-1-30-v1");
+  if(!response.ok)throw new Error("تعذر جلب الأسئلة");
+  const data=await response.json(),questions=data.questions||[];
+  $("questionsList").innerHTML=questions.map((q,index)=>'<div class="question"><strong>'+(index+1)+". "+safe(q.text)+'</strong><div class="muted">'+(q.options||[]).map(option=>"<div>◯ "+safe(option)+"</div>").join("")+"</div></div>").join("")||"لا توجد أسئلة";
+ }catch{$("questionsList").textContent="تعذر تحميل الأسئلة؛ يمكنك فتح رابط تقويم الطالب."}
+}
+$("autoRefresh").checked=localStorage.getItem("teacherAutoRefresh")!=="false";
+$("compact").checked=localStorage.getItem("teacherCompact")==="true";
+$("autoRefresh").onchange=event=>localStorage.setItem("teacherAutoRefresh",String(event.target.checked));
+$("compact").onchange=event=>{localStorage.setItem("teacherCompact",String(event.target.checked));document.body.classList.toggle("compact",event.target.checked)};
+document.body.classList.toggle("compact",$("compact").checked);
+db.auth.onAuthStateChange((event,session)=>{if((event==="SIGNED_IN"||event==="TOKEN_REFRESHED")&&tab==="report"&&session)setTimeout(load,0);if(event==="SIGNED_OUT"&&tab==="report")load()});
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();installPrompt=event;$("installApp").style.display="inline-block"});
+$("installApp").onclick=async()=>{
+ if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;$("installApp").style.display="none";return}
+ msg("من قائمة المتصفح ⋮ اختر «إضافة إلى الشاشة الرئيسية» أو «تثبيت التطبيق».");
+};
+window.addEventListener("appinstalled",()=>{$("installApp").style.display="none";msg("أُضيف الاختصار إلى شاشة الهاتف.")});
+const startOnResults=new URLSearchParams(location.search).get("view")==="results"||location.hash==="#results";
+showTab(startOnResults?"report":"questions");
+loadQuestions();
+</script>
+</body>
+</html>
