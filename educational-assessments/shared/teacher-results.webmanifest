@@ -4,7 +4,7 @@
   "description": "كشف نتائج طلاب الأستاذ محمد حسن العامري",
   "lang": "ar",
   "dir": "rtl",
-  "start_url": "./teacher-results.html?view=results",
+  "start_url": "./teacher-results.html?view=results&v=results-auth-20261031-3",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
