@@ -73,7 +73,7 @@ function render(){
 $("send").onclick=async()=>{
  $("send").disabled=true;msg("جارٍ إرسال رمز الدخول...");
  try{
-  const {error}=await db.auth.signInWithOtp({email:EMAIL,options:{shouldCreateUser:false,emailRedirectTo:APP_URL+"&view=results"}});
+  const {error}=await db.auth.signInWithOtp({email:EMAIL,options:{shouldCreateUser:false,emailRedirectTo:APP_URL+"?view=results"}});
   if(error)throw error;
   $("otpArea").hidden=false;
   msg("أُرسل رابط التأكيد إلى البريد. افتح أحدث رسالة على هذا الهاتف؛ لا تكرر الإرسال الآن.");
