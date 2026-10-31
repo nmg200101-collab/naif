@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#176a9c">
 <meta name="description" content="كشف نتائج الطلاب وتسليماتهم للأستاذ">
-<link rel="manifest" href="./teacher-results.webmanifest">
+<link rel="manifest" href="./teacher-results.webmanifest?v=results-auth-20261031-3">
 <link rel="icon" href="./teacher-results-icon.svg" type="image/svg+xml">
 <title>نتائج طلابي</title>
 <style>
@@ -22,15 +22,15 @@
 </header>
 <nav aria-label="أقسام التقويم"><button class="active" data-tab="questions" aria-selected="true">الأسئلة</button><button data-tab="report" aria-selected="false">نتائج طلابي</button><button data-tab="settings" aria-selected="false">الإعدادات</button></nav>
 <section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>تقويم المحاضرة الأولى — علم النفس التربوي</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
-<section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث النتائج عند فتح القسم</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>البريد المعتمد: mohamedalamiry8@gmail.com</p><p class="hint">لا تُحفظ كلمة المرور. يحفظ Supabase جلسة الدخول في هذا المتصفح عبر اتصال HTTPS ويجددها تلقائيًا. استخدم اختصارك على هاتفك الشخصي، وسجّل الخروج عند استخدام جهاز مشترك.</p><small>إعدادات عرض الاختبار محفوظة على هذا الهاتف. نشر الأسئلة محفوظ على الخادم.</small></section>
-<section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>أرسل رابط التأكيد إلى البريد المعتمد وافتحه على هذا الهاتف. إذا تضمنت الرسالة رمزًا من 6 أرقام، أدخله هنا:</p><p><strong>mohamedalamiry8@gmail.com</strong></p><button id="send" type="button">إرسال رمز دخول</button><div id="otpArea" hidden><label for="otp">رمز التحقق</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="الرمز المكوّن من 6 أرقام (إن وُجد)"><button id="verify" type="button">تأكيد الدخول</button><p class="hint">افتح أحدث رسالة وصلتك فقط، ثم اضغط رابط التأكيد. سيعود بك الرابط إلى كشف النتائج مباشرة. لا تستخدم رابطًا قديمًا سبق فتحه أو انتهت صلاحيته.</p></div></section>
+<section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث النتائج عند فتح القسم</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>تُرسل رسائل الدخول إلى البريد المعتمد للأستاذ.</p><p class="hint">لا تُحفظ كلمة المرور. يحفظ Supabase جلسة الدخول في هذا المتصفح عبر اتصال HTTPS ويجددها تلقائيًا. استخدم اختصارك على هاتفك الشخصي، وسجّل الخروج عند استخدام جهاز مشترك.</p><small>إعدادات عرض الاختبار محفوظة على هذا الهاتف. نشر الأسئلة محفوظ على الخادم.</small></section>
+<section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>أرسل رابط التأكيد إلى البريد المعتمد وافتحه على هذا الهاتف. إذا تضمنت الرسالة رمزًا من 6 أرقام، أدخله هنا:</p><p><strong>حساب الأستاذ المعتمد</strong></p><button id="send" type="button">إرسال رمز دخول</button><div id="otpArea" hidden><label for="otp">رمز التحقق</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="الرمز المكوّن من 6 أرقام (إن وُجد)"><button id="verify" type="button">تأكيد الدخول</button><p class="hint">افتح أحدث رسالة وصلتك فقط، ثم اضغط رابط التأكيد. سيعود بك الرابط إلى كشف النتائج مباشرة. لا تستخدم رابطًا قديمًا سبق فتحه أو انتهت صلاحيته.</p></div></section>
 <section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p></section>
 <section class="panel" id="msg" role="status" aria-live="polite"></section>
 </main>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 const EMAIL="mohamedalamiry8@gmail.com";
-const APP_URL="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/teacher-results.html?v=results-auth-20261031-2";
+const APP_URL="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/teacher-results.html?v=results-auth-20261031-3";
 const API="https://nicgczedldimtcnlawjo.supabase.co/functions/v1";
 const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"naif-teacher-results-auth-v1"}});
 const $=id=>document.getElementById(id);
