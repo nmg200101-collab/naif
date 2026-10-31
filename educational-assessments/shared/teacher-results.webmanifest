@@ -1,0 +1,21 @@
+{
+  "name": "نتائج طلابي",
+  "short_name": "نتائجي",
+  "description": "كشف نتائج طلاب الأستاذ محمد حسن العامري",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./teacher-results.html?view=results",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6fa",
+  "theme_color": "#176a9c",
+  "icons": [
+    {
+      "src": "./teacher-results-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
