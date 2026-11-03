@@ -35,7 +35,7 @@ const APP_URL="https://raw.githack.com/nmg200101-collab/naif/teacher-results-rel
 const API="https://nicgczedldimtcnlawjo.supabase.co/functions/v1";
 const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"naif-teacher-results-auth-v1"}});
 const $=id=>document.getElementById(id);
-let results=[],analysisData=[],managementQuizzes=[],pendingQuestions=[],tab="questions",loadSerial=0,installPrompt=null;
+let results=[],analysisData=[],managementQuizzes=[],pendingQuestions=[],tab="questions",loadSerial=0,installPrompt=null,deletingResults=new Set();
 const msg=s=>$("msg").textContent=s;
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function load(){
@@ -95,21 +95,34 @@ $("closeResultActions").onclick=()=>{selectedResultId="";resultActions.close()};
 resultActions.addEventListener("click",event=>{if(event.target===resultActions){selectedResultId="";resultActions.close()}});
 $("deleteSelected").onclick=async()=>{
  const id=selectedResultId;
- if(!/^[1-9]\d*$/.test(id)){msg("اختر اسم الطالب أولًا.");return}
+ if(!/^[1-9]\\d*$/.test(id)){msg("اختر اسم الطالب أولًا.");return}
+ if(deletingResults.has(id)){msg("جارٍ حذف هذه المحاولة بالفعل.");return}
  const row=results.find(item=>String(item.id)===id);
  if(!row){resultActions.close();msg("لم تعد هذه المحاولة موجودة في الكشف.");return}
  const confirmed=window.confirm("سيُحذف هذا التسليم نهائيًا من الكشف وتحليل الأسئلة، ولن تُحذف محاولات الطالب الأخرى. هل تريد حذف محاولة "+row.student_name+"؟");
  if(!confirmed)return;
  const {data:{session},error:sessionError}=await db.auth.getSession();
  if(sessionError||!session){msg("انتهت جلسة الأستاذ. سجّل الدخول ثم أعد المحاولة.");return}
- const button=$("deleteSelected");button.disabled=true;button.textContent="جارٍ الحذف...";
+ deletingResults.add(id);
+ selectedResultId="";
+ results=results.filter(item=>String(item.id)!==id);
+ resultActions.close();
+ render();
+ msg("بدأ حذف محاولة "+row.student_name+"؛ يمكنك اختيار محاولة أخرى الآن.");
  try{
   const response=await fetch(API+"/teacher-results-api",{method:"DELETE",headers:{Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({id})});
   const data=await response.json();
   if(!response.ok||!data.deleted)throw new Error(data.error||"تعذر حذف المحاولة");
-  selectedResultId="";resultActions.close();await load();
+  results=results.filter(item=>String(item.id)!==id);
   msg("تم حذف محاولة "+row.student_name+" من الكشف والتحليل.");
- }catch(error){msg(error?.message||"تعذر حذف المحاولة.");button.disabled=false;button.textContent="حذف هذه المحاولة"}
+  void load();
+ }catch(error){
+  if(!results.some(item=>String(item.id)===id))results.push(row);
+  msg("لم يكتمل حذف "+row.student_name+": "+(error?.message||"تعذر حذف المحاولة"));
+ }finally{
+  deletingResults.delete(id);
+  render();
+ }
 };
 function renderAnalysis(){
  const select=$("analysisQuiz"),previous=select.value;
