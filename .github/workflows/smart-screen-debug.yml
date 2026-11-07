@@ -1,7 +1,7 @@
 name: Smart Screen Control APK
 on:
   push:
-    branches: [build/smart-screen-control-v0.2.0]
+    branches: [build/smart-screen-control-v0.3.0]
   workflow_dispatch:
 jobs:
   build:
@@ -25,12 +25,27 @@ jobs:
           gradle-version: '8.9'
       - name: Extract verified source
         run: tar -xJf source.tar.xz
+      - name: Apply simplified interface and validate resources
+        run: |
+          python3 tools/simplify_ui_v03.py
+          python3 - <<'PY'
+          import re, xml.etree.ElementTree as ET
+          from pathlib import Path
+          xml=Path('app/src/main/res/layout/activity_main.xml').read_text()
+          main=Path('app/src/main/java/com/smartscreen/control/MainActivity.kt').read_text()
+          ET.fromstring(xml)
+          ids=set(re.findall(r'@\+id/(\w+)',xml))
+          assert set(re.findall(r'R\.id\.(\w+)',main))<=ids
+          assert xml.index('مدة تشغيل الشاشة') < xml.index('النقر المزدوج') < xml.index('الخيارات الأخرى')
+          assert 'visibility="gone"' in xml
+          print('Simplified UI: XML / IDs / sequence OK')
+          PY
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartScreenControl-v0.2.0-debug-apk
+          name: SmartScreenControl-v0.3.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -40,12 +55,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.2.0-debug.apk
-          sha256sum downloads/SmartScreenControl-V0.2.0-debug.apk > downloads/SmartScreenControl-V0.2.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.3.0-debug.apk
+          sha256sum downloads/SmartScreenControl-V0.3.0-debug.apk > downloads/SmartScreenControl-V0.3.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartScreenControl-V0.2.0-debug.apk downloads/SmartScreenControl-V0.2.0-debug.apk.sha256
+          git add downloads/SmartScreenControl-V0.3.0-debug.apk downloads/SmartScreenControl-V0.3.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.2.0 APK [skip ci]"
-            git push origin HEAD:build/smart-screen-control-v0.2.0
+            git commit -m "build: publish Smart Screen Control v0.3.0 APK [skip ci]"
+            git push origin HEAD:build/smart-screen-control-v0.3.0
           fi
