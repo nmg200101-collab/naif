@@ -211,6 +211,11 @@ methods = """    private fun showTab(which: Int) {
         try {
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent)
             else startService(intent)
+            if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission("android.permission.POST_NOTIFICATIONS") !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 702)
+            }
             getSharedPreferences("night_dim", MODE_PRIVATE).edit()
                 .putInt("level", level).apply()
             toast("تم طلب تشغيل التعتيم؛ يمكن إيقافه من إشعار التطبيق أو من هنا")
@@ -396,6 +401,11 @@ class DimRulesTest {
 manifest = APP / "AndroidManifest.xml"
 mt = ET.parse(manifest)
 root = mt.getroot()
+if not any(el.get(attr("name")) == "android.permission.POST_NOTIFICATIONS"
+           for el in root.findall("uses-permission")):
+    root.insert(0, ET.Element("uses-permission", {
+        attr("name"): "android.permission.POST_NOTIFICATIONS"
+    }))
 application = root.find("application")
 assert application is not None
 svc = ET.Element("service", {attr("name"): ".NightDimService",
@@ -427,5 +437,5 @@ assert all(n in ids for n in (
     "tabTime", "tabTap", "tabDim", "panelTime", "panelTap", "panelDim",
     "seekDim", "btnDimStart", "btnDimStop", "btnDimSoft", "btnDimNight", "btnDimDeep"
 ))
-assert len(list(main)) == 7, "Expected header, tabs, 3 panels, advanced and footer"
+assert len(list(main)) == 8, "Expected header, tabs, 3 panels, advanced button, advanced and footer"
 print("V0.4.0 UI/manifest/Kotlin references validated; added night-dim service + tests.")
