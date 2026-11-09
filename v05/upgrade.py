@@ -75,7 +75,7 @@ panel_internet = node("LinearLayout",id="@+id/panelInternet",
     orientation="vertical",visibility="gone")
 body.insert(5, panel_internet)
 more.set(a("text"), "⚙  الإعدادات والصلاحيات الأخرى  ▾")
-footer.set(a("text"), "التحكم الذكي V0.7.0 • تحكم محلي دون جمع محتوى الاتصالات")
+footer.set(a("text"), "التحكم الذكي V0.8.0 • تحكم محلي دون جمع محتوى الاتصالات")
 footer.set(a("textColor"), "#6E8A8A")
 
 # All previous tools remain under their respective screens.
@@ -199,8 +199,8 @@ for name in ("InternetPanel.kt","LocalBlockVpnService.kt"):
 gradle=BASE/"app/build.gradle.kts"
 g=gradle.read_text()
 assert 'versionCode = 4' in g
-gradle.write_text(g.replace("versionCode = 4","versionCode = 7")
-  .replace('versionName = "0.4.0"','versionName = "0.7.0"'))
+gradle.write_text(g.replace("versionCode = 4","versionCode = 8")
+  .replace('versionName = "0.4.0"','versionName = "0.8.0"'))
 
 # Static contract checks.
 ET.parse(layout)
@@ -212,4 +212,4 @@ assert not missing, f"Unresolved ids: {missing}"
 assert "android.permission.BIND_VPN_SERVICE" in manifest.read_text()
 assert "التحكم الذكي" in manifest.read_text()
 assert "panelInternet" in ids and "tabInternet" in ids
-print("V0.7 UI merged, old screen functions retained, VPN blocker and usage UI connected.")
+print("V0.8 UI merged, old screen functions retained, VPN blocker and usage UI connected.")
