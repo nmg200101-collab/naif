@@ -1,7 +1,7 @@
-name: Smart Control V0.8.0 APK
+name: Smart Control V0.9.0 APK
 on:
   push:
-    branches: [build/smart-control-v0.8.0]
+    branches: [build/smart-control-v0.9.0]
   workflow_dispatch:
 jobs:
   build:
@@ -48,6 +48,21 @@ jobs:
         run: python3 v07/install.py
       - name: Install daily data budgets and regression checks
         run: python3 v08/install.py
+      - name: Install Smart Control V0.9 dashboard and hotspot module
+        run: python3 v09/upgrade.py
+      - name: Verify nine-section navigation without loss of legacy tools
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          layout = Path('app/src/main/res/layout/activity_main.xml').read_text()
+          activity = Path('app/src/main/java/com/smartscreen/control/MainActivity.kt').read_text()
+          for expected in ['dashboardHome','panelHotspot','panelFeature','btnGoHome']:
+              assert expected in layout, expected
+          for expected in ['SmartHomeHub','HotspotPanel','FeatureGateway','showHomeDashboard','showTab']:
+              assert expected in activity, expected
+          assert 'versionName = "0.9.0"' in Path('app/build.gradle.kts').read_text()
+          print('Navigation and version contract verified')
+          PY
       - name: Verify bulk-selection, internet usage and VPN tab source
         run: |
           python3 - <<'PY'
@@ -62,7 +77,7 @@ jobs:
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartControl-v0.8.0-debug-apk
+          name: SmartControl-v0.9.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -72,12 +87,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V0.8.0-debug.apk
-          sha256sum downloads/SmartControl-V0.8.0-debug.apk > downloads/SmartControl-V0.8.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V0.9.0-debug.apk
+          sha256sum downloads/SmartControl-V0.9.0-debug.apk > downloads/SmartControl-V0.9.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartControl-V0.8.0-debug.apk downloads/SmartControl-V0.8.0-debug.apk.sha256
+          git add downloads/SmartControl-V0.9.0-debug.apk downloads/SmartControl-V0.9.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.8.0 APK [skip ci]"
-            git push origin HEAD:build/smart-control-v0.8.0
+            git commit -m "build: publish Smart Screen Control v0.9.0 APK [skip ci]"
+            git push origin HEAD:build/smart-control-v0.9.0
           fi
