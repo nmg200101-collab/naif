@@ -21,6 +21,11 @@ class AppLockStore(context: Context) {
     private fun failKey(pkg: String) = "failure_" + id(pkg)
     private fun untilKey(pkg: String) = "until_" + id(pkg)
 
+    fun biometricAllowed(): Boolean = p.getBoolean("biometric_enabled", false)
+    fun setBiometricAllowed(allowed: Boolean) {
+        p.edit().putBoolean("biometric_enabled", allowed).apply()
+    }
+
     fun hasMaster(): Boolean = LockCrypto.kind(p.getString("master", null)) != null
     fun masterKind(): String? = LockCrypto.kind(p.getString("master", null))
 
