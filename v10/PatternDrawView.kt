@@ -37,7 +37,8 @@ class PatternDrawView(context: Context) : View(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val desired = (220 * resources.displayMetrics.density).toInt()
         val w = resolveSize(desired, widthMeasureSpec)
-        setMeasuredDimension(w, w)
+        val h = resolveSize(desired, heightMeasureSpec)
+        setMeasuredDimension(w, h)
     }
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
