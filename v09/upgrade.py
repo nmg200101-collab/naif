@@ -204,5 +204,5 @@ for marker in ("dashboardHome","btnGoHome","panelHotspot","panelFeature"):
 assert "LocalBlockVpnService" in manifest.read_text()
 assert "NightDimService" in manifest.read_text()
 assert "DoubleTapBubbleService" in manifest.read_text()
-assert "versionName = \\"0.9.0\\"" in gradle.read_text()
+assert 'versionName = "0.9.0"' in gradle.read_text()
 print("V0.9 interface integrated; nine home sections, hotspot and legacy controls verified.")
