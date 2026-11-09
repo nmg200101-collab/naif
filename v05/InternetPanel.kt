@@ -1,0 +1,451 @@
+package com.smartscreen.control
+
+import android.app.Activity
+import android.app.AppOpsManager
+import android.app.usage.NetworkStats
+import android.app.usage.NetworkStatsManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.net.ConnectivityManager
+import android.net.VpnService
+import android.os.Build
+import android.os.Process
+import android.provider.Settings
+import android.view.Gravity
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
+import android.widget.TextView
+import android.widget.Toast
+import android.widget.Switch
+import java.util.Calendar
+import java.util.Locale
+import kotlin.concurrent.thread
+
+/**
+ * The network tab is built as native Android views to preserve the exact hierarchy of the
+ * approved light UI: access tabs, network actions, apps, VPN, data usage, advanced.
+ *
+ * A VPN blackhole only receives traffic of blocked packages. No payload is logged.
+ * "VPN improvement" opens Android's real VPN settings; no fictitious speed boost.
+ */
+class InternetPanel(
+    private val activity: Activity,
+    private val root: LinearLayout
+) {
+    private val prefs = activity.getSharedPreferences("network_rules_v05", Context.MODE_PRIVATE)
+    private val white = Color.WHITE
+    private val ink = Color.rgb(9, 43, 48)
+    private val muted = Color.rgb(87, 111, 116)
+    private val line = Color.rgb(205, 228, 228)
+    private val green = Color.rgb(19, 173, 103)
+    private val red = Color.rgb(219, 76, 87)
+    private val blue = Color.rgb(24, 132, 223)
+    private val pale = Color.rgb(245, 251, 249)
+    private val apps by lazy { installedApps() }
+    private lateinit var section: LinearLayout
+    private lateinit var accessStatus: TextView
+    private lateinit var appsColumn: LinearLayout
+    private lateinit var scope: Spinner
+    private lateinit var vpnStatus: TextView
+    private lateinit var wifiStat: TextView
+    private lateinit var mobileStat: TextView
+    private lateinit var rulesDescription: TextView
+    private var profile = 0 // 0 Wi-Fi, 1 cellular, 2 usage
+    private var showAll = false
+
+    private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density + 0.5f).toInt()
+    private fun bg(color: Int, r: Int = 18, edge: Int = line): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = dp(r).toFloat()
+            setStroke(dp(1), edge)
+        }
+    private fun linear(horizontal: Boolean = false) = LinearLayout(activity).apply {
+        orientation = if (horizontal) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        layoutDirection = View.LAYOUT_DIRECTION_RTL
+    }
+    private fun styleText(value: String, size: Float = 14f, color: Int = ink,
+                          bold: Boolean = false): TextView = TextView(activity).apply {
+        text = value
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER_VERTICAL or Gravity.RIGHT
+        if (bold) setTypeface(null, Typeface.BOLD)
+        setPadding(0, dp(3), 0, dp(3))
+    }
+    private fun card(): LinearLayout = linear().apply {
+        background = bg(white, 20)
+        setPadding(dp(15), dp(15), dp(15), dp(15))
+        val lp = LinearLayout.LayoutParams(-1, -2)
+        lp.topMargin = dp(12)
+        layoutParams = lp
+        elevation = dp(2).toFloat()
+    }
+    private fun action(name: String, color: Int, whiteText: Boolean = true): Button =
+        Button(activity).apply {
+            text = name
+            textSize = 14f
+            isAllCaps = false
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(if (whiteText) white else ink)
+            background = bg(color, 14, color)
+            backgroundTintList = null
+            minHeight = dp(48)
+            minimumHeight = dp(48)
+        }
+    private fun paddedRow(left: View, right: View): LinearLayout = linear(true).apply {
+        addView(left, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(right, LinearLayout.LayoutParams(0, -2, 1f))
+    }
+    private fun margin(target: View, top: Int) {
+        val lp = (target.layoutParams ?: LinearLayout.LayoutParams(-1, -2))
+        if (lp is LinearLayout.LayoutParams) {
+            lp.topMargin = dp(top)
+            target.layoutParams = lp
+        }
+    }
+
+    init { showProfile(0) }
+
+    private fun showProfile(next: Int) {
+        profile = next
+        root.removeAllViews()
+        val top = card()
+        top.addView(styleText("إدارة الإنترنت", 21f, ink, true))
+        top.addView(styleText("تحكم واضح في اتصال التطبيقات والبيانات", 13f, muted))
+        root.addView(top)
+
+        val options = linear(true)
+        val labels = listOf("الواي فاي", "بيانات الهاتف", "استخدام البيانات")
+        labels.forEachIndexed { index, name ->
+            val b = action(name, if (index == profile) green else white, index == profile)
+            b.textSize = 12f
+            if (index != profile) b.setTextColor(ink)
+            val lp = LinearLayout.LayoutParams(0, dp(55), 1f)
+            lp.setMargins(dp(2), dp(4), dp(2), dp(2))
+            options.addView(b, lp)
+            b.setOnClickListener { showProfile(index) }
+        }
+        root.addView(options)
+
+        if (profile == 2) {
+            buildUsage()
+        } else {
+            buildAccess()
+        }
+        buildVpnCard()
+        if (profile != 2) buildSummary()
+        buildAdvanced()
+        margin(top, 8)
+    }
+
+    private fun key() = if (profile == 1) "mobile" else "wifi"
+    private fun keyFor(pkg: String, p: String = key()) = "rule_" + p + "_" + pkg
+    private fun isBlocked(pkg: String, p: String = key()): Boolean {
+        val override = prefs.getString(keyFor(pkg, p), "") ?: ""
+        return when (override) {
+            "deny" -> true
+            "allow" -> false
+            else -> prefs.getBoolean("all_" + p, false)
+        }
+    }
+    private fun installedApps(): List<ApplicationInfo> {
+        @Suppress("DEPRECATION")
+        val list = activity.packageManager.getInstalledApplications(0)
+        return list.filter {
+            it.packageName != activity.packageName &&
+                ((it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 ||
+                 activity.packageManager.getLaunchIntentForPackage(it.packageName) != null)
+        }.sortedBy { app ->
+            app.loadLabel(activity.packageManager).toString().lowercase(Locale.getDefault())
+        }.take(320)
+    }
+
+    private fun buildAccess() {
+        val hero = card()
+        val title = if (profile == 0) "إدارة الواي فاي" else "إدارة بيانات الهاتف"
+        val subtitle = if (profile == 0) "اتصال التطبيقات عبر الواي فاي" else
+            "اتصال التطبيقات عبر بيانات الهاتف"
+        hero.addView(styleText("◉  " + title, 21f, ink, true))
+        hero.addView(styleText(subtitle, 14f, muted))
+        hero.addView(styleText("◠  )))", 36f, blue, true).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(2), 0, dp(2))
+        })
+        accessStatus = styleText("", 12f, muted)
+        hero.addView(accessStatus)
+
+        val buttons = linear(true)
+        val deny = action("⊘  حظر الإنترنت", red)
+        val allow = action("◉  فتح الإنترنت", green)
+        val lp = LinearLayout.LayoutParams(0, dp(53), 1f)
+        lp.setMargins(dp(3), dp(9), dp(3), dp(3))
+        buttons.addView(deny, lp)
+        val lp2 = LinearLayout.LayoutParams(0, dp(53), 1f)
+        lp2.setMargins(dp(3), dp(9), dp(3), dp(3))
+        buttons.addView(allow, lp2)
+        hero.addView(buttons)
+
+        val scopeRow = linear(true)
+        val caption = styleText("تطبيق على:", 13f, ink, true)
+        scopeRow.addView(caption, LinearLayout.LayoutParams(-2, dp(50)))
+        scope = Spinner(activity)
+        val choices = mutableListOf("جميع التطبيقات")
+        choices.addAll(apps.map { it.loadLabel(activity.packageManager).toString() })
+        scope.adapter = ArrayAdapter(activity, android.R.layout.simple_spinner_dropdown_item, choices)
+        scopeRow.addView(scope, LinearLayout.LayoutParams(0, dp(50), 1f))
+        hero.addView(scopeRow)
+        root.addView(hero)
+
+        deny.setOnClickListener { changeRule(true) }
+        allow.setOnClickListener { changeRule(false) }
+
+        val appCard = card()
+        appCard.addView(styleText("▣  إدارة التطبيقات", 19f, ink, true))
+        appCard.addView(styleText("السماح أو الحظر لكل تطبيق بحسب الشبكة المختارة", 12f, muted))
+        val showButton = action("عرض جميع التطبيقات", pale, false)
+        appCard.addView(showButton)
+        appsColumn = linear()
+        appCard.addView(appsColumn)
+        root.addView(appCard)
+        showButton.setOnClickListener {
+            showAll = !showAll
+            showButton.text = if (showAll) "عرض أقل" else "عرض جميع التطبيقات"
+            renderApps()
+        }
+        renderApps()
+        updateAccessStatus()
+    }
+
+    private fun renderApps() {
+        appsColumn.removeAllViews()
+        if (apps.isEmpty()) {
+            appsColumn.addView(styleText("لا توجد تطبيقات متاحة للعرض على هذا الجهاز", 13f, muted))
+            return
+        }
+        val visible = if (showAll) apps else apps.take(3)
+        visible.forEach { app ->
+            val row = linear(true).apply {
+                background = bg(pale, 12)
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+            }
+            val name = app.loadLabel(activity.packageManager).toString()
+            row.addView(styleText(name, 14f, ink, true),
+                LinearLayout.LayoutParams(0, dp(48), 1f))
+            val toggle = Switch(activity)
+            toggle.isChecked = !isBlocked(app.packageName)
+            toggle.contentDescription = "السماح بالإنترنت لـ " + name
+            row.addView(toggle)
+            appsColumn.addView(row)
+            margin(row, 6)
+            toggle.setOnCheckedChangeListener { _, granted ->
+                prefs.edit().putString(keyFor(app.packageName),
+                    if (granted) "allow" else "deny").apply()
+                applyBlockerIfReady()
+            }
+        }
+    }
+
+    private fun changeRule(block: Boolean) {
+        val index = scope.selectedItemPosition
+        if (index <= 0) {
+            val edit = prefs.edit().putBoolean("all_" + key(), block)
+            // A bulk action resets old per-app exceptions so the user has a predictable result.
+            prefs.all.keys.filter { it.startsWith("rule_" + key() + "_") }
+                .forEach { edit.remove(it) }
+            edit.apply()
+        } else {
+            val app = apps.getOrNull(index - 1) ?: return
+            prefs.edit().putString(keyFor(app.packageName),
+                if (block) "deny" else "allow").apply()
+        }
+        renderApps()
+        applyBlockerIfReady()
+    }
+
+    private fun applyBlockerIfReady() {
+        updateAccessStatus()
+        val prepare = VpnService.prepare(activity)
+        if (prepare != null) {
+            Toast.makeText(activity,
+                "حُفظت القواعد. وافق على إذن VPN لتطبيق الحظر فعليًا.", Toast.LENGTH_LONG).show()
+            activity.startActivityForResult(prepare, 508)
+            return
+        }
+        applyBlocker()
+    }
+
+    fun onVpnGranted() = applyBlocker()
+    fun onResume() {
+        if (profile != 2 && ::accessStatus.isInitialized) updateAccessStatus()
+    }
+
+    private fun applyBlocker() {
+        val intent = Intent(activity, LocalBlockVpnService::class.java)
+            .setAction(LocalBlockVpnService.ACTION_APPLY)
+        try {
+            if (Build.VERSION.SDK_INT >= 26) activity.startForegroundService(intent)
+            else activity.startService(intent)
+            Toast.makeText(activity,
+                "تم إرسال قواعد الحظر إلى VPN المحلي. تحقق من حالة الاتصال.",
+                Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(activity,
+                "تعذر تفعيل VPN. تحقق من إعدادات الهاتف.", Toast.LENGTH_LONG).show()
+        }
+        updateAccessStatus()
+    }
+
+    private fun updateAccessStatus() {
+        val count = apps.count { isBlocked(it.packageName) }
+        val state = if (LocalBlockVpnService.isRunning)
+            "VPN المحلي يعمل • التطبيقات المحظورة في هذه الشبكة: " + count
+        else if (count > 0)
+            "هناك " + count + " قاعدة حظر محفوظة؛ VPN غير نشط"
+        else "الإنترنت مسموح للتطبيقات"
+        accessStatus.text = state
+    }
+
+    private fun buildVpnCard() {
+        val vpn = card()
+        vpn.addView(styleText("♢  VPN لتحسين الاتصال", 19f, ink, true))
+        vpnStatus = styleText("VPN خارجي غير متصل من داخل التطبيق", 12f, red)
+        vpn.addView(vpnStatus)
+        vpn.addView(styleText("قد يحسن مسار الاتصال، لكنه لا يضمن زيادة السرعة. "
+            + "التطبيق لا يوفر خادم VPN للتسريع.", 12f, muted))
+        val b = action("⏻  تشغيل VPN", blue)
+        vpn.addView(b)
+        b.setOnClickListener {
+            if (LocalBlockVpnService.isRunning) {
+                Toast.makeText(activity,
+                    "يعمل VPN للحظر حاليًا. تشغيل VPN آخر سيوقف الحظر وقد يغير الإنترنت.",
+                    Toast.LENGTH_LONG).show()
+            }
+            try { activity.startActivity(Intent(Settings.ACTION_VPN_SETTINGS)) }
+            catch (_: Exception) {
+                Toast.makeText(activity, "افتح إعدادات VPN يدويًا من إعدادات الشبكة",
+                    Toast.LENGTH_LONG).show()
+            }
+        }
+        root.addView(vpn)
+    }
+
+    private fun buildUsage() {
+        val usage = card()
+        usage.addView(styleText("▥  استخدام البيانات", 20f, ink, true))
+        usage.addView(styleText("الاستهلاك الفعلي خلال الشهر الحالي", 13f, muted))
+        val row = linear(true)
+        val w = linear().apply {
+            background = bg(pale)
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+        }
+        wifiStat = styleText("الواي فاي\n—", 15f, ink, true)
+        w.addView(wifiStat)
+        val m = linear().apply {
+            background = bg(pale)
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+        }
+        mobileStat = styleText("بيانات الهاتف\n—", 15f, ink, true)
+        m.addView(mobileStat)
+        row.addView(w, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(m, LinearLayout.LayoutParams(0, -2, 1f))
+        usage.addView(row)
+        val button = action("عرض إحصاءات الهاتف الفعلية", pale, false)
+        usage.addView(button)
+        button.setOnClickListener { loadUsage() }
+        root.addView(usage)
+        loadUsage()
+    }
+
+    private fun buildSummary() {
+        val card = card()
+        card.addView(styleText("▥  استخدام البيانات", 18f, ink, true))
+        card.addView(styleText("افتح تبويب «استخدام البيانات» للاطلاع على الإحصاءات", 12f, muted))
+        val b = action("عرض الإحصاءات", pale, false)
+        card.addView(b)
+        b.setOnClickListener { showProfile(2) }
+        root.addView(card)
+    }
+
+    private fun usageAllowed(): Boolean {
+        val ops = activity.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        return ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(), activity.packageName) == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun loadUsage() {
+        if (!usageAllowed()) {
+            wifiStat.text = "الواي فاي\nيلزم إذن الاستخدام"
+            mobileStat.text = "بيانات الهاتف\nيلزم إذن الاستخدام"
+            val info = styleText("يلزم منح إذن «الوصول إلى بيانات الاستخدام» من إعدادات الهاتف.", 12f, muted)
+            (wifiStat.parent?.parent?.parent as? LinearLayout)?.let { parent ->
+                val open = action("منح إذن بيانات الاستخدام", blue)
+                if (parent.findViewWithTag<View>("usagePermissionBtn") == null) {
+                    open.tag = "usagePermissionBtn"
+                    parent.addView(open)
+                    open.setOnClickListener {
+                        activity.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                    }
+                }
+            }
+            return
+        }
+        wifiStat.text = "الواي فاي\nجارٍ التحميل…"
+        mobileStat.text = "بيانات الهاتف\nجارٍ التحميل…"
+        thread(name="smart-control-stats") {
+            val stats = activity.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
+            val cal = Calendar.getInstance()
+            cal.set(Calendar.DAY_OF_MONTH, 1)
+            cal.set(Calendar.HOUR_OF_DAY, 0)
+            cal.set(Calendar.MINUTE, 0)
+            cal.set(Calendar.SECOND, 0)
+            val start = cal.timeInMillis
+            val end = System.currentTimeMillis()
+            fun read(type: Int): String {
+                return try {
+                    val bucket = stats.querySummaryForDevice(type, null, start, end)
+                    humanBytes(bucket.rxBytes + bucket.txBytes)
+                } catch (e: Exception) {
+                    "غير متاح على هذا الهاتف"
+                }
+            }
+            val wifi = read(ConnectivityManager.TYPE_WIFI)
+            val mobile = read(ConnectivityManager.TYPE_MOBILE)
+            activity.runOnUiThread {
+                if (::wifiStat.isInitialized) wifiStat.text = "الواي فاي\n" + wifi
+                if (::mobileStat.isInitialized) mobileStat.text = "بيانات الهاتف\n" + mobile
+            }
+        }
+    }
+
+    private fun humanBytes(bytes: Long): String {
+        return if (bytes >= 1_073_741_824)
+            String.format(Locale.US, "%.2f GB", bytes / 1_073_741_824.0)
+        else String.format(Locale.US, "%.1f MB", bytes / 1_048_576.0)
+    }
+
+    private fun buildAdvanced() {
+        val advanced = card()
+        advanced.addView(styleText("⚙  إعدادات متقدمة", 19f, ink, true))
+        advanced.addView(styleText("إيقاف الحظر • قواعد الشبكات • الصلاحيات", 12f, muted))
+        val disable = action("إيقاف VPN المحلي وإلغاء جميع القيود", pale, false)
+        advanced.addView(disable)
+        disable.setOnClickListener {
+            prefs.edit().clear().apply()
+            activity.stopService(Intent(activity, LocalBlockVpnService::class.java))
+            showProfile(profile)
+            Toast.makeText(activity, "تم إلغاء قواعد الحظر وإيقاف VPN", Toast.LENGTH_LONG).show()
+        }
+        root.addView(advanced)
+    }
+}
