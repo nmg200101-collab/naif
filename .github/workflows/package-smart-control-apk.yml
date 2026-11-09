@@ -30,15 +30,25 @@ jobs:
           test -x "$APK_SIGNER"
           "$APK_SIGNER" verify --verbose --print-certs downloads/SmartControl-V1.0.0-debug.apk > /tmp/signer-v1.txt
           "$APK_SIGNER" verify --verbose --print-certs /tmp/smart-control-v0.9.0-debug.apk > /tmp/signer-v09.txt
+          echo "PREVIOUS APK SIGNER INFORMATION:"; cat /tmp/signer-v09.txt
+          echo "CURRENT APK SIGNER INFORMATION:"; cat /tmp/signer-v1.txt
           python3 - <<'PY'
           from pathlib import Path
           import re
           def get(path):
               text = Path(path).read_text()
-              m = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9a-fA-F]+)", text)
-              if not m:
-                  raise RuntimeError("Certificate fingerprint could not be parsed")
-              return m.group(1).lower()
+              candidates = [
+                  r"certificate\\s+SHA-?256\\s+digest:\\s*([0-9a-fA-F:]+)",
+                  r"certificate\\s+SHA-?256[^\\n]*?:\\s*([0-9a-fA-F:]+)",
+                  r"SHA256:\\s*([0-9a-fA-F:]+)",
+              ]
+              for pattern in candidates:
+                  m = re.search(pattern.replace("\\\\", "\\"), text, re.IGNORECASE)
+                  if m:
+                      digest = m.group(1).replace(":", "").lower()
+                      if len(digest) == 64:
+                          return digest
+              raise RuntimeError("Certificate fingerprint could not be parsed")
           old = get("/tmp/signer-v09.txt")
           new = get("/tmp/signer-v1.txt")
           matched = old == new
