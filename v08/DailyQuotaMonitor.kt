@@ -32,6 +32,7 @@ class DailyQuotaMonitor(
     private val handler = Handler(worker.looper)
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var stopped = false
+    private var lastObservedDay = 0
     private val runnable = object : Runnable {
         override fun run() {
             if (stopped) return
@@ -94,7 +95,8 @@ class DailyQuotaMonitor(
         val from = calendar.timeInMillis
         val until = System.currentTimeMillis()
 
-        fun usageByUid(type: Int): Map<Int, Long>? = try {
+        fun usageByUid(type: Int): Map<Int, Long>? {
+            return try {
             val stream = statsManager.querySummary(type, null, from, until)
                 ?: return null
             val result = HashMap<Int, Long>()
@@ -109,7 +111,8 @@ class DailyQuotaMonitor(
                 stream.close()
             }
             result
-        } catch (_: Exception) { null }
+            } catch (_: Exception) { null }
+        }
 
         val wifiUsage = if (selected.any { it.first == "wifi" })
             usageByUid(ConnectivityManager.TYPE_WIFI) else null
@@ -129,9 +132,9 @@ class DailyQuotaMonitor(
                 updated = true
             }
         }
-        if (updated) {
-            editor.apply()
-            main.post { if (!stopped) changed() }
-        }
+        val dayChanged = lastObservedDay != 0 && lastObservedDay != today
+        lastObservedDay = today
+        if (updated) editor.apply()
+        if (updated || dayChanged) main.post { if (!stopped) changed() }
     }
 }
