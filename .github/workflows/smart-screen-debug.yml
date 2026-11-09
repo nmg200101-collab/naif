@@ -1,7 +1,7 @@
-name: Smart Control V0.6.0 APK
+name: Smart Control V0.7.0 APK
 on:
   push:
-    branches: [build/smart-control-v0.6.0]
+    branches: [build/smart-control-v0.7.0]
   workflow_dispatch:
 jobs:
   build:
@@ -44,12 +44,14 @@ jobs:
         run: python3 tools/upgrade_v04.py
       - name: Apply Smart Control light visual and internet manager
         run: python3 v05/upgrade.py
+      - name: Install background network protection and tests
+        run: python3 v07/install.py
       - name: Verify bulk-selection, internet usage and VPN tab source
         run: |
           python3 - <<'PY'
           from pathlib import Path
           source = Path("app/src/main/java/com/smartscreen/control/InternetPanel.kt").read_text()
-          for text in ["تحديد الكل", "إلغاء التحديد", "حظر المحدد", "فتح المحدد", "VPN التسريع", "آخر 7 أيام", "querySummary", "renderUsageRows"]:
+          for text in ["تحديد الكل", "إلغاء التحديد", "حظر كامل للمحدد", "السماح للمحدد", "حظر الخلفية للمحدد فقط", "VPN التسريع", "آخر 7 أيام", "querySummary", "renderUsageRows"]:
               assert text in source, text
           print("Selection, VPN and per-app stats wiring: OK")
           PY
@@ -58,7 +60,7 @@ jobs:
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartScreenControl-v0.6.0-debug-apk
+          name: SmartScreenControl-v0.7.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -68,12 +70,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.6.0-debug.apk
-          sha256sum downloads/SmartScreenControl-V0.6.0-debug.apk > downloads/SmartScreenControl-V0.6.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.7.0-debug.apk
+          sha256sum downloads/SmartScreenControl-V0.7.0-debug.apk > downloads/SmartScreenControl-V0.7.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartScreenControl-V0.6.0-debug.apk downloads/SmartScreenControl-V0.6.0-debug.apk.sha256
+          git add downloads/SmartScreenControl-V0.7.0-debug.apk downloads/SmartScreenControl-V0.7.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.6.0 APK [skip ci]"
-            git push origin HEAD:build/smart-control-v0.6.0
+            git commit -m "build: publish Smart Screen Control v0.7.0 APK [skip ci]"
+            git push origin HEAD:build/smart-control-v0.7.0
           fi
