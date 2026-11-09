@@ -27,6 +27,9 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.Switch
+import android.widget.CheckBox
+import android.widget.HorizontalScrollView
+import android.net.Uri
 import java.util.Calendar
 import java.util.Locale
 import kotlin.concurrent.thread
@@ -60,8 +63,13 @@ class InternetPanel(
     private lateinit var wifiStat: TextView
     private lateinit var mobileStat: TextView
     private lateinit var rulesDescription: TextView
-    private var profile = 0 // 0 Wi-Fi, 1 cellular, 2 usage
+    private var profile = 0 // 0 Wi-Fi, 1 cellular, 2 usage, 3 VPN
     private var showAll = false
+    private val selectedPackages = linkedSetOf<String>()
+    private lateinit var selectionInfo: TextView
+    private lateinit var usageAppsColumn: LinearLayout
+    private var usagePeriod = 2 // 0 today, 1 last 7 days, 2 month
+    private var statsGeneration = 0
 
     private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density + 0.5f).toInt()
     private fun bg(color: Int, r: Int = 18, edge: Int = line): GradientDrawable =
@@ -125,27 +133,34 @@ class InternetPanel(
         top.addView(styleText("تحكم واضح في اتصال التطبيقات والبيانات", 13f, muted))
         root.addView(top)
 
+        val scroll = HorizontalScrollView(activity).apply {
+            isHorizontalScrollBarEnabled = false
+            fillViewport = true
+        }
         val options = linear(true)
-        val labels = listOf("الواي فاي", "بيانات الهاتف", "استخدام البيانات")
+        val labels = listOf("الواي فاي", "بيانات الهاتف", "استخدام البيانات", "VPN التسريع")
         labels.forEachIndexed { index, name ->
             val b = action(name, if (index == profile) green else white, index == profile)
             b.textSize = 12f
             if (index != profile) b.setTextColor(ink)
-            val lp = LinearLayout.LayoutParams(0, dp(55), 1f)
-            lp.setMargins(dp(2), dp(4), dp(2), dp(2))
+            val lp = LinearLayout.LayoutParams(dp(112), dp(55))
+            lp.setMargins(dp(3), dp(4), dp(3), dp(2))
             options.addView(b, lp)
             b.setOnClickListener { showProfile(index) }
         }
-        root.addView(options)
+        scroll.addView(options)
+        root.addView(scroll)
 
-        if (profile == 2) {
-            buildUsage()
-        } else {
-            buildAccess()
+        when (profile) {
+            0, 1 -> {
+                selectedPackages.clear()
+                buildAccess()
+                buildSummary()
+                buildAdvanced()
+            }
+            2 -> buildUsage()
+            3 -> buildVpnCard()
         }
-        buildVpnCard()
-        if (profile != 2) buildSummary()
-        buildAdvanced()
         margin(top, 8)
     }
 
@@ -213,6 +228,31 @@ class InternetPanel(
         val appCard = card()
         appCard.addView(styleText("▣  إدارة التطبيقات", 19f, ink, true))
         appCard.addView(styleText("السماح أو الحظر لكل تطبيق بحسب الشبكة المختارة", 12f, muted))
+        selectionInfo = styleText("التطبيقات المحددة: 0", 12f, muted)
+        appCard.addView(selectionInfo)
+        val pickRow = linear(true)
+        val allButton = action("تحديد الكل", pale, false)
+        val noneButton = action("إلغاء التحديد", pale, false)
+        pickRow.addView(allButton, LinearLayout.LayoutParams(0, dp(48), 1f))
+        pickRow.addView(noneButton, LinearLayout.LayoutParams(0, dp(48), 1f))
+        appCard.addView(pickRow)
+        val applyRow = linear(true)
+        val blockSelected = action("حظر المحدد", red)
+        val allowSelected = action("فتح المحدد", green)
+        applyRow.addView(blockSelected, LinearLayout.LayoutParams(0, dp(48), 1f))
+        applyRow.addView(allowSelected, LinearLayout.LayoutParams(0, dp(48), 1f))
+        appCard.addView(applyRow)
+        allButton.setOnClickListener {
+            selectedPackages.clear()
+            selectedPackages.addAll(apps.map { it.packageName })
+            renderApps()
+        }
+        noneButton.setOnClickListener {
+            selectedPackages.clear()
+            renderApps()
+        }
+        blockSelected.setOnClickListener { applySelectedRules(true) }
+        allowSelected.setOnClickListener { applySelectedRules(false) }
         val showButton = action("عرض جميع التطبيقات", pale, false)
         appCard.addView(showButton)
         appsColumn = linear()
@@ -240,6 +280,16 @@ class InternetPanel(
                 setPadding(dp(10), dp(6), dp(10), dp(6))
             }
             val name = app.loadLabel(activity.packageManager).toString()
+            val check = CheckBox(activity).apply {
+                isChecked = selectedPackages.contains(app.packageName)
+                contentDescription = "تحديد " + name + " للإجراء الجماعي"
+                setOnCheckedChangeListener { _, selected ->
+                    if (selected) selectedPackages.add(app.packageName)
+                    else selectedPackages.remove(app.packageName)
+                    updateSelectionInfo()
+                }
+            }
+            row.addView(check)
             row.addView(styleText(name, 14f, ink, true),
                 LinearLayout.LayoutParams(0, dp(48), 1f))
             val toggle = Switch(activity)
@@ -254,6 +304,34 @@ class InternetPanel(
                 applyBlockerIfReady()
             }
         }
+        updateSelectionInfo()
+    }
+
+    private fun updateSelectionInfo() {
+        if (::selectionInfo.isInitialized) {
+            selectionInfo.text = "المحدد: " + selectedPackages.size + " من " + apps.size +
+                " • اختر ثم اضغط حظر المحدد أو فتح المحدد"
+        }
+    }
+
+    private fun applySelectedRules(block: Boolean) {
+        if (selectedPackages.isEmpty()) {
+            Toast.makeText(activity, "حدد تطبيقًا واحدًا على الأقل أولًا",
+                Toast.LENGTH_SHORT).show()
+            return
+        }
+        val edit = prefs.edit()
+        val target = key()
+        selectedPackages.forEach { pkg ->
+            edit.putString(keyFor(pkg, target), if (block) "deny" else "allow")
+        }
+        edit.apply()
+        Toast.makeText(activity, if (block) "تم حفظ حظر " + selectedPackages.size + " تطبيق"
+            else "تم حفظ السماح لـ " + selectedPackages.size + " تطبيق",
+            Toast.LENGTH_LONG).show()
+        selectedPackages.clear()
+        renderApps()
+        applyBlockerIfReady()
     }
 
     private fun changeRule(block: Boolean) {
@@ -321,8 +399,10 @@ class InternetPanel(
         vpn.addView(styleText("♢  VPN لتحسين الاتصال", 19f, ink, true))
         vpnStatus = styleText("VPN خارجي غير متصل من داخل التطبيق", 12f, red)
         vpn.addView(vpnStatus)
-        vpn.addView(styleText("قد يحسن مسار الاتصال، لكنه لا يضمن زيادة السرعة. "
-            + "التطبيق لا يوفر خادم VPN للتسريع.", 12f, muted))
+        vpn.addView(styleText("قسم مستقل لإدارة VPN واختبار اتصالك. لا يوجد خادم VPN للتسريع "
+            + "داخل هذا التطبيق، وقد يزيد VPN خارجي زمن الاستجابة أو يخفض السرعة.", 12f, muted))
+        vpn.addView(styleText("ملاحظة: يستخدم حظر التطبيقات VPN محليًا. لا يمكن تشغيل "
+            + "VPN منفصل للتسريع بالتزامن معه.", 12f, muted))
         val b = action("⏻  تشغيل VPN", blue)
         vpn.addView(b)
         b.setOnClickListener {
@@ -337,7 +417,33 @@ class InternetPanel(
                     Toast.LENGTH_LONG).show()
             }
         }
+        val speedCheck = action("اختبار سرعة الإنترنت من المتصفح", pale, false)
+        vpn.addView(speedCheck)
+        speedCheck.setOnClickListener {
+            try {
+                activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://fast.com/")))
+            } catch (_: Exception) {
+                Toast.makeText(activity, "تعذر فتح المتصفح لاختبار السرعة",
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+        val current = styleText(if (LocalBlockVpnService.isRunning)
+            "VPN الحظر المحلي نشط الآن" else "VPN الحظر المحلي غير نشط", 13f, muted)
+        vpn.addView(current)
+        val stop = action("إيقاف VPN المحلي للحظر", pale, false)
+        vpn.addView(stop)
+        stop.setOnClickListener {
+            activity.stopService(Intent(activity, LocalBlockVpnService::class.java))
+            current.text = "تم طلب إيقاف VPN الحظر المحلي"
+        }
         root.addView(vpn)
+        val limits = card()
+        limits.addView(styleText("حدود سرعة كل تطبيق", 18f, ink, true))
+        limits.addView(styleText("غير متاحة للتفعيل بعد: محرك الحظر الحالي يسقط "
+            + "حركة التطبيقات المحظورة، ولا يمرر حركة التطبيقات المسموحة. "
+            + "تحديد سرعة تحميل ورفع حقيقية يتطلب محرك VPN لتمرير البيانات "
+            + "وتطبيق حدود النطاق الترددي دون قطع الاتصال.", 12f, muted))
+        root.addView(limits)
     }
 
     private fun buildUsage() {
