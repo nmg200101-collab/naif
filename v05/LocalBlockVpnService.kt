@@ -36,6 +36,8 @@ class LocalBlockVpnService : VpnService() {
         const val ACTION_STOP = "com.smartscreen.control.STOP_BLOCK_RULES"
         @Volatile var isRunning = false
             private set
+        @Volatile var isMonitoring = false
+            private set
     }
 
     private val prefs by lazy { getSharedPreferences("network_rules_v05", MODE_PRIVATE) }
@@ -49,6 +51,7 @@ class LocalBlockVpnService : VpnService() {
     private var pump: Thread? = null
     private var activeSignature = ""
     private var activeTransport = ""
+    private var foregroundWatcher: ForegroundAppWatcher? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     override fun onCreate() {
@@ -66,6 +69,11 @@ class LocalBlockVpnService : VpnService() {
         }
         try { connectivity.registerNetworkCallback(request, callback); networkCallback = callback }
         catch (_: Exception) {}
+        foregroundWatcher = ForegroundAppWatcher(this) { snapshot ->
+            main.post {
+                if (isMonitoring) installRules()
+            }
+        }.also { it.start() }
     }
 
     private fun scheduleProfileUpdate() {
@@ -73,7 +81,7 @@ class LocalBlockVpnService : VpnService() {
         main.postDelayed(updateRunnable, 1100)
     }
     private val updateRunnable = Runnable {
-        if (isRunning) installRules()
+        if (isMonitoring) installRules()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -90,6 +98,7 @@ class LocalBlockVpnService : VpnService() {
             } else {
                 startForeground(notificationId, note)
             }
+            isMonitoring = true
             installRules()
         } catch (_: Exception) {
             stopSelf()
@@ -113,27 +122,41 @@ class LocalBlockVpnService : VpnService() {
         return if (cell) "mobile" else null
     }
 
-    private fun packagesForTransport(transport: String): List<String> {
+    private fun defaultMode(network: String): String {
+        val configured = prefs.getString("default_" + network, null)
+        return if (configured != null) NetworkRulePolicy.normalize(configured)
+            else if (prefs.getBoolean("all_" + network, false))
+                NetworkRulePolicy.DENY else NetworkRulePolicy.ALLOW
+    }
+
+    private fun ruleMode(network: String, pkg: String): String =
+        NetworkRulePolicy.normalize(
+            prefs.getString("rule_" + network + "_" + pkg, null) ?: defaultMode(network))
+
+    private fun supportedApplications(): List<ApplicationInfo> {
         @Suppress("DEPRECATION")
-        val list = packageManager.getInstalledApplications(0)
-        val all = prefs.getBoolean("all_" + transport, false)
-        return list.asSequence()
+        return packageManager.getInstalledApplications(0)
             .filter {
                 it.packageName != packageName &&
-                ((it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 ||
-                 packageManager.getLaunchIntentForPackage(it.packageName) != null)
+                    ((it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 ||
+                     packageManager.getLaunchIntentForPackage(it.packageName) != null)
             }
-            .filter {
-                when (prefs.getString("rule_" + transport + "_" + it.packageName, "")) {
-                    "deny" -> true
-                    "allow" -> false
-                    else -> all
-                }
+            .sortedBy { it.packageName }
+            .take(320)
+    }
+
+    private fun packagesForTransport(transport: String): List<String> {
+        val state = foregroundWatcher?.snapshot
+        return supportedApplications()
+            .filter { app ->
+                NetworkRulePolicy.isBlocked(
+                    mode = ruleMode(transport, app.packageName),
+                    packageName = app.packageName,
+                    foregroundPackage = state?.foregroundPackage,
+                    foregroundReliable = state?.reliable ?: false
+                )
             }
             .map { it.packageName }
-            .distinct()
-            .take(320)
-            .toList()
     }
 
     @Synchronized
@@ -152,13 +175,17 @@ class LocalBlockVpnService : VpnService() {
         }
         val packages = packagesForTransport(transport)
         val signature = transport + ":" + packages.sorted().joinToString("|")
-        if (signature == activeSignature && tunnel != null) return
+        if (signature == activeSignature &&
+            (tunnel != null || packages.isEmpty())) return
         closeTunnel()
         activeSignature = signature
         activeTransport = transport
         if (packages.isEmpty()) {
             // No traffic should ever be sent to a blackhole with an empty allow-list.
-            updateNotification("لا توجد تطبيقات محظورة في الشبكة الحالية")
+            updateNotification(
+                if (hasAnyRules())
+                    "الحماية نشطة • التطبيق المفتوح مسموح، أو لا توجد تطبيقات محظورة الآن"
+                else "الحظر متوقف • جميع التطبيقات مسموح لها")
             if (!hasAnyRules()) stopSelf()
             return
         }
@@ -199,8 +226,12 @@ class LocalBlockVpnService : VpnService() {
                     // Closing the TUN stops the read loop.
                 }
             }
-            updateNotification("حظر " + added + " تطبيق • " +
-                if (transport == "wifi") "واي فاي" else "بيانات الهاتف")
+            val state = foregroundWatcher?.snapshot
+            val note = "حظر " + added + " تطبيق • " +
+                (if (transport == "wifi") "واي فاي" else "بيانات الهاتف") +
+                if (state?.reliable == false && hasBackgroundRules())
+                    " • حظر الخلفية ينتظر إذن الاستخدام" else ""
+            updateNotification(note)
         } catch (_: Exception) {
             closeTunnel()
             updateNotification("فشل تفعيل الحظر؛ أوقف VPN وأعد المحاولة")
@@ -208,9 +239,21 @@ class LocalBlockVpnService : VpnService() {
     }
 
     private fun hasAnyRules(): Boolean {
-        return prefs.getBoolean("all_wifi", false) ||
-            prefs.getBoolean("all_mobile", false) ||
-            prefs.all.any { it.key.startsWith("rule_") && it.value == "deny" }
+        return listOf("wifi", "mobile").any { network ->
+            NetworkRulePolicy.needsEnforcement(defaultMode(network)) ||
+                supportedApplications().any {
+                    NetworkRulePolicy.needsEnforcement(ruleMode(network, it.packageName))
+                }
+        }
+    }
+
+    private fun hasBackgroundRules(): Boolean {
+        return listOf("wifi", "mobile").any { network ->
+            defaultMode(network) == NetworkRulePolicy.BACKGROUND ||
+                supportedApplications().any {
+                    ruleMode(network, it.packageName) == NetworkRulePolicy.BACKGROUND
+                }
+        }
     }
 
     private fun createNotificationChannel() {
@@ -258,6 +301,9 @@ class LocalBlockVpnService : VpnService() {
     }
 
     override fun onDestroy() {
+        isMonitoring = false
+        foregroundWatcher?.stop()
+        foregroundWatcher = null
         main.removeCallbacks(updateRunnable)
         networkCallback?.let {
             try { connectivity.unregisterNetworkCallback(it) } catch (_: Exception) {}
