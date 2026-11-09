@@ -1,0 +1,8 @@
+Smart Control Android APK signing certificate comparison
+Previous APK: SmartControl V0.9.0 debug APK
+Previous signer certificate SHA256: 5702b52619f191a4684739a01b7fb4ed12e796f5e58ae38351cdd782f39fab10
+Current APK: SmartControl V1.0.0 debug APK
+Current signer certificate SHA256: 1609f6ac1e636203afe9b3d36a349c45d810ed0115fd6e7a7f526f9deed714e8
+Same signing certificate: NO
+This comparison does not grant access to the private signing key.
+Certificates differ: an in-place APK update over V0.9.0 will be rejected. The old private signing key is required to create a same-signer update.
