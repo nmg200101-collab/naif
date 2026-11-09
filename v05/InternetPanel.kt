@@ -1,6 +1,7 @@
 package com.smartscreen.control
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.AppOpsManager
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
@@ -190,8 +191,75 @@ class InternetPanel(
     private fun anyRules(): Boolean {
         return listOf("wifi", "mobile").any { network ->
             NetworkRulePolicy.needsEnforcement(defaultMode(network)) ||
-                apps.any { NetworkRulePolicy.needsEnforcement(ruleMode(it.packageName, network)) }
+                apps.any { app ->
+                    NetworkRulePolicy.needsEnforcement(ruleMode(app.packageName, network)) ||
+                    prefs.getInt("quota_" + network + "_" + app.packageName, 0) > 0
+                }
         }
+    }
+
+    private fun quotaKey(pkg: String, network: String = key()) =
+        "quota_" + network + "_" + pkg
+    private fun quotaHitKey(pkg: String, network: String = key()) =
+        "quota_trip_" + network + "_" + pkg
+    private fun quotaText(mb: Int): String = when (mb) {
+        0 -> "بدون حد"
+        1024 -> "1 جيجابايت يوميًا"
+        else -> mb.toString() + " ميجابايت يوميًا"
+    }
+
+    private fun todayCode(): Int {
+        val now = Calendar.getInstance()
+        return DailyQuotaPolicy.dayCode(now.get(Calendar.YEAR),
+            now.get(Calendar.DAY_OF_YEAR))
+    }
+
+    private fun chooseQuotaFor(packages: List<String>) {
+        val selected = packages.filter { pkg -> apps.any { it.packageName == pkg } }
+        if (selected.isEmpty()) {
+            Toast.makeText(activity, "حدد تطبيقًا أولًا", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!usageAllowed()) {
+            pendingBackgroundAction = { chooseQuotaFor(selected) }
+            Toast.makeText(activity,
+                "حد الاستهلاك يحتاج إذن الوصول إلى بيانات الاستخدام؛ ارجع بعد منحه.",
+                Toast.LENGTH_LONG).show()
+            try {
+                activity.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            } catch (_: Exception) { pendingBackgroundAction = null }
+            return
+        }
+        val presets = DailyQuotaPolicy.presetMb
+        val labels = presets.map { quotaText(it) }.toTypedArray()
+        val current = if (selected.size == 1)
+            prefs.getInt(quotaKey(selected.first()), 0) else 0
+        val index = presets.indexOf(current).coerceAtLeast(0)
+        val title = if (selected.size == 1) "حد الاستهلاك اليومي للتطبيق"
+            else "حد الاستهلاك اليومي لـ " + selected.size + " تطبيق"
+        AlertDialog.Builder(activity)
+            .setTitle(title)
+            .setSingleChoiceItems(labels, index) { dialog, choice ->
+                val mb = presets[choice]
+                val network = key()
+                val edit = prefs.edit()
+                selected.forEach { pkg ->
+                    edit.putInt(quotaKey(pkg, network), mb)
+                    // Raising/removing a limit should immediately release an old trip.
+                    edit.remove(quotaHitKey(pkg, network))
+                }
+                edit.apply()
+                dialog.dismiss()
+                selectedPackages.clear()
+                renderApps()
+                applyBlockerIfReady()
+                Toast.makeText(activity,
+                    if (mb == 0) "أُلغي حد الاستهلاك" else
+                        "حُفظ حد الاستهلاك؛ فحص الاستخدام دوري وقد يتأخر",
+                    Toast.LENGTH_LONG).show()
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
     }
 
     private fun applyWithUsagePermission(mode: String, action: () -> Unit) {
@@ -214,7 +282,11 @@ class InternetPanel(
     private fun savePerAppMode(pkg: String, mode: String) {
         val network = key()
         applyWithUsagePermission(mode) {
-            prefs.edit().putString(keyFor(pkg, network), mode).apply()
+            val edit = prefs.edit().putString(keyFor(pkg, network), mode)
+            if (mode == NetworkRulePolicy.ALLOW) {
+                edit.remove(quotaKey(pkg, network)).remove(quotaHitKey(pkg, network))
+            }
+            edit.apply()
             renderApps()
             applyBlockerIfReady()
         }
@@ -281,6 +353,10 @@ class InternetPanel(
         appCard.addView(styleText(
             "لكل تطبيق: السماح دائمًا • الخلفية فقط • حظر كامل. "
              + "قواعد الواي فاي والبيانات مستقلة.", 12f, muted))
+        appCard.addView(styleText(
+            "حد البيانات اليومي اختياري ويُقاس عبر نظام أندرويد. "
+                + "قد تتأخر القراءة والحماية دقائق؛ ليس تحديدًا لسرعة الإنترنت.",
+            12f, muted))
         selectionInfo = styleText("التطبيقات المحددة: 0", 12f, muted)
         appCard.addView(selectionInfo)
         val pickRow = linear(true)
@@ -297,6 +373,11 @@ class InternetPanel(
         appCard.addView(applyRow)
         val backgroundSelected = action("حظر الخلفية للمحدد فقط", pale, false)
         appCard.addView(backgroundSelected)
+        val dailyLimitSelected = action("حد الاستهلاك اليومي للمحدد", pale, false)
+        appCard.addView(dailyLimitSelected)
+        dailyLimitSelected.setOnClickListener {
+            chooseQuotaFor(selectedPackages.toList())
+        }
 
         allButton.setOnClickListener {
             selectedPackages.clear()
@@ -372,6 +453,17 @@ class InternetPanel(
                 }
             }
             row.addView(spinner, LinearLayout.LayoutParams(-1, dp(48)))
+            val cap = prefs.getInt(quotaKey(app.packageName), 0)
+            val reached = DailyQuotaPolicy.activeBlock(cap,
+                prefs.getInt(quotaHitKey(app.packageName), 0), todayCode())
+            val limitButton = action(
+                (if (reached) "● وصل إلى الحد • " else "حد البيانات • ") +
+                    quotaText(cap), pale, false)
+            limitButton.textSize = 12f
+            row.addView(limitButton, LinearLayout.LayoutParams(-1, dp(44)))
+            limitButton.setOnClickListener {
+                chooseQuotaFor(listOf(app.packageName))
+            }
             appsColumn.addView(row)
             margin(row, 6)
         }
@@ -395,7 +487,13 @@ class InternetPanel(
         val network = key()
         applyWithUsagePermission(mode) {
             val edit = prefs.edit()
-            chosen.forEach { edit.putString(keyFor(it, network), mode) }
+            chosen.forEach {
+                edit.putString(keyFor(it, network), mode)
+                if (mode == NetworkRulePolicy.ALLOW) {
+                    edit.remove(quotaKey(it, network))
+                        .remove(quotaHitKey(it, network))
+                }
+            }
             edit.apply()
             selectedPackages.clear()
             renderApps()
@@ -420,10 +518,20 @@ class InternetPanel(
                     .putString("default_" + network, mode)
                     .putBoolean("all_" + network, mode == NetworkRulePolicy.DENY)
                 // Global commands reset previous per-app exceptions predictably.
-                prefs.all.keys.filter { it.startsWith("rule_" + network + "_") }
+                prefs.all.keys.filter { it.startsWith("rule_" + network + "_") ||
+                    (mode == NetworkRulePolicy.ALLOW &&
+                     (it.startsWith("quota_" + network + "_") ||
+                      it.startsWith("quota_trip_" + network + "_"))) }
                     .forEach { edit.remove(it) }
                 edit.apply()
-            } else prefs.edit().putString(keyFor(appPackage, network), mode).apply()
+            } else {
+                val edit = prefs.edit().putString(keyFor(appPackage, network), mode)
+                if (mode == NetworkRulePolicy.ALLOW) {
+                    edit.remove(quotaKey(appPackage, network))
+                        .remove(quotaHitKey(appPackage, network))
+                }
+                edit.apply()
+            }
             renderApps()
             applyBlockerIfReady()
         }
@@ -481,10 +589,19 @@ class InternetPanel(
         val backgroundOnly = apps.count {
             ruleMode(it.packageName) == NetworkRulePolicy.BACKGROUND
         }
-        val rules = "حظر كامل: " + fullyBlocked + " • حظر الخلفية: " + backgroundOnly
+        val budgets = apps.count { prefs.getInt(quotaKey(it.packageName), 0) > 0 }
+        val reached = apps.count { pkg ->
+            val limit = prefs.getInt(quotaKey(pkg.packageName), 0)
+            DailyQuotaPolicy.activeBlock(limit,
+                prefs.getInt(quotaHitKey(pkg.packageName), 0), todayCode())
+        }
+        val rules = "حظر كامل: " + fullyBlocked + " • الخلفية: " +
+            backgroundOnly + " • حدود يومية: " + budgets +
+            (if (reached > 0) " • وصل للحد: " + reached else "")
         val state = when {
             LocalBlockVpnService.isMonitoring -> "حماية الإنترنت نشطة • " + rules
-            fullyBlocked + backgroundOnly > 0 -> "القواعد محفوظة؛ VPN غير نشط • " + rules
+            fullyBlocked + backgroundOnly + budgets > 0 ->
+                "القواعد محفوظة؛ VPN غير نشط • " + rules
             else -> "الإنترنت مسموح للتطبيقات"
         }
         accessStatus.text = state
