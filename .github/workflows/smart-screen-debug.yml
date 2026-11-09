@@ -1,7 +1,7 @@
-name: Smart Control V0.9.0 APK
+name: Smart Control V1.0.0 APK
 on:
   push:
-    branches: [build/smart-control-v0.9.0]
+    branches: [build/smart-control-v1.0.0]
   workflow_dispatch:
 jobs:
   build:
@@ -50,6 +50,25 @@ jobs:
         run: python3 v08/install.py
       - name: Install Smart Control V0.9 dashboard and hotspot module
         run: python3 v09/upgrade.py
+      - name: Integrate optional unified/per-app app-lock security
+        run: python3 v10/upgrade.py
+      - name: Verify app-lock accessibility privacy and credentials
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path("app/src/main/java/com/smartscreen/control")
+          accessibility = Path("app/src/main/res/xml/app_lock_accessibility.xml").read_text()
+          manifest = Path("app/src/main/AndroidManifest.xml").read_text()
+          for name in ["AppLockAccessibilityService.kt","AppLockStore.kt",
+                       "AppLockPanel.kt","LockCrypto.kt","PatternDrawView.kt",
+                       "AppBiometricActivity.kt"]:
+              assert (src/name).is_file(), name
+          assert 'canRetrieveWindowContent="false"' in accessibility
+          assert "BIND_ACCESSIBILITY_SERVICE" in manifest
+          assert 'android:exported="false"' in manifest
+          assert 'versionName = "1.0.0"' in Path("app/build.gradle.kts").read_text()
+          print("App-lock code/permissions/identity present")
+          PY
       - name: Verify nine-section navigation without loss of legacy tools
         run: |
           python3 - <<'PY'
@@ -60,7 +79,7 @@ jobs:
               assert expected in layout, expected
           for expected in ['SmartHomeHub','HotspotPanel','FeatureGateway','showHomeDashboard','showTab']:
               assert expected in activity, expected
-          assert 'versionName = "0.9.0"' in Path('app/build.gradle.kts').read_text()
+          assert 'versionName = "1.0.0"' in Path('app/build.gradle.kts').read_text()
           print('Navigation and version contract verified')
           PY
       - name: Verify bulk-selection, internet usage and VPN tab source
@@ -77,7 +96,7 @@ jobs:
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartControl-v0.9.0-debug-apk
+          name: SmartControl-v1.0.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -87,12 +106,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V0.9.0-debug.apk
-          sha256sum downloads/SmartControl-V0.9.0-debug.apk > downloads/SmartControl-V0.9.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V1.0.0-debug.apk
+          sha256sum downloads/SmartControl-V1.0.0-debug.apk > downloads/SmartControl-V1.0.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartControl-V0.9.0-debug.apk downloads/SmartControl-V0.9.0-debug.apk.sha256
+          git add downloads/SmartControl-V1.0.0-debug.apk downloads/SmartControl-V1.0.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.9.0 APK [skip ci]"
-            git push origin HEAD:build/smart-control-v0.9.0
+            git commit -m "build: publish Smart Screen Control v1.0.0 APK [skip ci]"
+            git push origin HEAD:build/smart-control-v1.0.0
           fi
