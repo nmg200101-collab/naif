@@ -29,6 +29,7 @@ import android.widget.Toast
 import android.widget.Switch
 import android.widget.CheckBox
 import android.widget.HorizontalScrollView
+import android.widget.AdapterView
 import android.net.Uri
 import java.util.Calendar
 import java.util.Locale
@@ -65,6 +66,7 @@ class InternetPanel(
     private lateinit var rulesDescription: TextView
     private var profile = 0 // 0 Wi-Fi, 1 cellular, 2 usage, 3 VPN
     private var showAll = false
+    private var pendingBackgroundAction: (() -> Unit)? = null
     private val selectedPackages = linkedSetOf<String>()
     private lateinit var selectionInfo: TextView
     private lateinit var usageAppsColumn: LinearLayout
@@ -172,14 +174,52 @@ class InternetPanel(
 
     private fun key() = if (profile == 1) "mobile" else "wifi"
     private fun keyFor(pkg: String, p: String = key()) = "rule_" + p + "_" + pkg
-    private fun isBlocked(pkg: String, p: String = key()): Boolean {
-        val override = prefs.getString(keyFor(pkg, p), "") ?: ""
-        return when (override) {
-            "deny" -> true
-            "allow" -> false
-            else -> prefs.getBoolean("all_" + p, false)
+    private fun defaultMode(network: String): String {
+        val configured = prefs.getString("default_" + network, null)
+        return if (configured != null) NetworkRulePolicy.normalize(configured)
+            else if (prefs.getBoolean("all_" + network, false))
+                NetworkRulePolicy.DENY else NetworkRulePolicy.ALLOW
+    }
+
+    private fun ruleMode(pkg: String, network: String = key()): String {
+        val override = prefs.getString(keyFor(pkg, network), null)
+        return if (override != null) NetworkRulePolicy.normalize(override)
+            else defaultMode(network)
+    }
+
+    private fun anyRules(): Boolean {
+        return listOf("wifi", "mobile").any { network ->
+            NetworkRulePolicy.needsEnforcement(defaultMode(network)) ||
+                apps.any { NetworkRulePolicy.needsEnforcement(ruleMode(it.packageName, network)) }
         }
     }
+
+    private fun applyWithUsagePermission(mode: String, action: () -> Unit) {
+        if (mode != NetworkRulePolicy.BACKGROUND || usageAllowed()) {
+            action()
+            return
+        }
+        pendingBackgroundAction = action
+        Toast.makeText(activity, "حظر الخلفية يحتاج إذن الوصول إلى بيانات الاستخدام. "
+            + "امنح الإذن ثم عد إلى التطبيق لإكمال الإجراء.", Toast.LENGTH_LONG).show()
+        try {
+            activity.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        } catch (_: Exception) {
+            pendingBackgroundAction = null
+            Toast.makeText(activity, "تعذر فتح شاشة الصلاحيات",
+                Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun savePerAppMode(pkg: String, mode: String) {
+        val network = key()
+        applyWithUsagePermission(mode) {
+            prefs.edit().putString(keyFor(pkg, network), mode).apply()
+            renderApps()
+            applyBlockerIfReady()
+        }
+    }
+
     private fun installedApps(): List<ApplicationInfo> {
         @Suppress("DEPRECATION")
         val list = activity.packageManager.getInstalledApplications(0)
@@ -228,12 +268,19 @@ class InternetPanel(
         hero.addView(scopeRow)
         root.addView(hero)
 
-        deny.setOnClickListener { changeRule(true) }
-        allow.setOnClickListener { changeRule(false) }
+        val backgroundOnly = action("☾  إيقاف الإنترنت في الخلفية فقط", pale, false)
+        hero.addView(backgroundOnly)
+        margin(backgroundOnly, 7)
+
+        deny.setOnClickListener { changeRule(NetworkRulePolicy.DENY) }
+        allow.setOnClickListener { changeRule(NetworkRulePolicy.ALLOW) }
+        backgroundOnly.setOnClickListener { changeRule(NetworkRulePolicy.BACKGROUND) }
 
         val appCard = card()
         appCard.addView(styleText("▣  إدارة التطبيقات", 19f, ink, true))
-        appCard.addView(styleText("السماح أو الحظر لكل تطبيق بحسب الشبكة المختارة", 12f, muted))
+        appCard.addView(styleText(
+            "لكل تطبيق: السماح دائمًا • الخلفية فقط • حظر كامل. "
+             + "قواعد الواي فاي والبيانات مستقلة.", 12f, muted))
         selectionInfo = styleText("التطبيقات المحددة: 0", 12f, muted)
         appCard.addView(selectionInfo)
         val pickRow = linear(true)
@@ -243,11 +290,14 @@ class InternetPanel(
         pickRow.addView(noneButton, LinearLayout.LayoutParams(0, dp(48), 1f))
         appCard.addView(pickRow)
         val applyRow = linear(true)
-        val blockSelected = action("حظر المحدد", red)
-        val allowSelected = action("فتح المحدد", green)
+        val blockSelected = action("حظر كامل للمحدد", red)
+        val allowSelected = action("السماح للمحدد", green)
         applyRow.addView(blockSelected, LinearLayout.LayoutParams(0, dp(48), 1f))
         applyRow.addView(allowSelected, LinearLayout.LayoutParams(0, dp(48), 1f))
         appCard.addView(applyRow)
+        val backgroundSelected = action("حظر الخلفية للمحدد فقط", pale, false)
+        appCard.addView(backgroundSelected)
+
         allButton.setOnClickListener {
             selectedPackages.clear()
             selectedPackages.addAll(apps.map { it.packageName })
@@ -257,8 +307,9 @@ class InternetPanel(
             selectedPackages.clear()
             renderApps()
         }
-        blockSelected.setOnClickListener { applySelectedRules(true) }
-        allowSelected.setOnClickListener { applySelectedRules(false) }
+        blockSelected.setOnClickListener { applySelectedRules(NetworkRulePolicy.DENY) }
+        allowSelected.setOnClickListener { applySelectedRules(NetworkRulePolicy.ALLOW) }
+        backgroundSelected.setOnClickListener { applySelectedRules(NetworkRulePolicy.BACKGROUND) }
         val showButton = action("عرض جميع التطبيقات", pale, false)
         appCard.addView(showButton)
         appsColumn = linear()
@@ -281,11 +332,12 @@ class InternetPanel(
         }
         val visible = if (showAll) apps else apps.take(3)
         visible.forEach { app ->
-            val row = linear(true).apply {
+            val row = linear().apply {
                 background = bg(pale, 12)
                 setPadding(dp(10), dp(6), dp(10), dp(6))
             }
             val name = app.loadLabel(activity.packageManager).toString()
+            val heading = linear(true)
             val check = CheckBox(activity).apply {
                 isChecked = selectedPackages.contains(app.packageName)
                 contentDescription = "تحديد " + name + " للإجراء الجماعي"
@@ -295,20 +347,33 @@ class InternetPanel(
                     updateSelectionInfo()
                 }
             }
-            row.addView(check)
-            row.addView(styleText(name, 14f, ink, true),
-                LinearLayout.LayoutParams(0, dp(48), 1f))
-            val toggle = Switch(activity)
-            toggle.isChecked = !isBlocked(app.packageName)
-            toggle.contentDescription = "السماح بالإنترنت لـ " + name
-            row.addView(toggle)
+            heading.addView(check)
+            heading.addView(styleText(name, 14f, ink, true),
+                LinearLayout.LayoutParams(0, dp(44), 1f))
+            row.addView(heading)
+            val choices = listOf("السماح دائمًا", "الخلفية فقط", "حظر كامل")
+            val values = listOf(NetworkRulePolicy.ALLOW,
+                NetworkRulePolicy.BACKGROUND, NetworkRulePolicy.DENY)
+            val spinner = Spinner(activity)
+            spinner.adapter = ArrayAdapter(activity,
+                android.R.layout.simple_spinner_dropdown_item, choices)
+            val current = ruleMode(app.packageName)
+            spinner.setSelection(values.indexOf(current).coerceAtLeast(0), false)
+            spinner.contentDescription = "وضع الإنترنت لـ " + name
+            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+                override fun onItemSelected(
+                    parent: AdapterView<*>?, view: View?, position: Int, id: Long
+                ) {
+                    val chosen = values[position]
+                    if (chosen != ruleMode(app.packageName)) {
+                        savePerAppMode(app.packageName, chosen)
+                    }
+                }
+            }
+            row.addView(spinner, LinearLayout.LayoutParams(-1, dp(48)))
             appsColumn.addView(row)
             margin(row, 6)
-            toggle.setOnCheckedChangeListener { _, granted ->
-                prefs.edit().putString(keyFor(app.packageName),
-                    if (granted) "allow" else "deny").apply()
-                applyBlockerIfReady()
-            }
         }
         updateSelectionInfo()
     }
@@ -316,49 +381,60 @@ class InternetPanel(
     private fun updateSelectionInfo() {
         if (::selectionInfo.isInitialized) {
             selectionInfo.text = "المحدد: " + selectedPackages.size + " من " + apps.size +
-                " • اختر ثم اضغط حظر المحدد أو فتح المحدد"
+                " • اختر ثم اضغط على وضع الحظر المطلوب"
         }
     }
 
-    private fun applySelectedRules(block: Boolean) {
+    private fun applySelectedRules(mode: String) {
         if (selectedPackages.isEmpty()) {
             Toast.makeText(activity, "حدد تطبيقًا واحدًا على الأقل أولًا",
                 Toast.LENGTH_SHORT).show()
             return
         }
-        val edit = prefs.edit()
-        val target = key()
-        selectedPackages.forEach { pkg ->
-            edit.putString(keyFor(pkg, target), if (block) "deny" else "allow")
+        val chosen = selectedPackages.toList()
+        val network = key()
+        applyWithUsagePermission(mode) {
+            val edit = prefs.edit()
+            chosen.forEach { edit.putString(keyFor(it, network), mode) }
+            edit.apply()
+            selectedPackages.clear()
+            renderApps()
+            applyBlockerIfReady()
+            val title = when(mode) {
+                NetworkRulePolicy.BACKGROUND -> "حظر الخلفية"
+                NetworkRulePolicy.DENY -> "الحظر الكامل"
+                else -> "السماح"
+            }
+            Toast.makeText(activity, "تم تطبيق " + title + " على " +
+                chosen.size + " تطبيق", Toast.LENGTH_LONG).show()
         }
-        edit.apply()
-        Toast.makeText(activity, if (block) "تم حفظ حظر " + selectedPackages.size + " تطبيق"
-            else "تم حفظ السماح لـ " + selectedPackages.size + " تطبيق",
-            Toast.LENGTH_LONG).show()
-        selectedPackages.clear()
-        renderApps()
-        applyBlockerIfReady()
     }
 
-    private fun changeRule(block: Boolean) {
+    private fun changeRule(mode: String) {
         val index = scope.selectedItemPosition
-        if (index <= 0) {
-            val edit = prefs.edit().putBoolean("all_" + key(), block)
-            // A bulk action resets old per-app exceptions so the user has a predictable result.
-            prefs.all.keys.filter { it.startsWith("rule_" + key() + "_") }
-                .forEach { edit.remove(it) }
-            edit.apply()
-        } else {
-            val app = apps.getOrNull(index - 1) ?: return
-            prefs.edit().putString(keyFor(app.packageName),
-                if (block) "deny" else "allow").apply()
+        val network = key()
+        val appPackage = if (index > 0) apps.getOrNull(index - 1)?.packageName else null
+        applyWithUsagePermission(mode) {
+            if (appPackage == null) {
+                val edit = prefs.edit()
+                    .putString("default_" + network, mode)
+                    .putBoolean("all_" + network, mode == NetworkRulePolicy.DENY)
+                // Global commands reset previous per-app exceptions predictably.
+                prefs.all.keys.filter { it.startsWith("rule_" + network + "_") }
+                    .forEach { edit.remove(it) }
+                edit.apply()
+            } else prefs.edit().putString(keyFor(appPackage, network), mode).apply()
+            renderApps()
+            applyBlockerIfReady()
         }
-        renderApps()
-        applyBlockerIfReady()
     }
 
     private fun applyBlockerIfReady() {
         updateAccessStatus()
+        if (!anyRules()) {
+            activity.stopService(Intent(activity, LocalBlockVpnService::class.java))
+            return
+        }
         val prepare = VpnService.prepare(activity)
         if (prepare != null) {
             Toast.makeText(activity,
@@ -371,6 +447,11 @@ class InternetPanel(
 
     fun onVpnGranted() = applyBlocker()
     fun onResume() {
+        if (pendingBackgroundAction != null && usageAllowed()) {
+            val pending = pendingBackgroundAction
+            pendingBackgroundAction = null
+            pending?.invoke()
+        }
         when (profile) {
             0, 1 -> if (::accessStatus.isInitialized) updateAccessStatus()
             2 -> if (::usageAppsColumn.isInitialized && usageAllowed()) loadUsage()
@@ -394,12 +475,18 @@ class InternetPanel(
     }
 
     private fun updateAccessStatus() {
-        val count = apps.count { isBlocked(it.packageName) }
-        val state = if (LocalBlockVpnService.isRunning)
-            "VPN المحلي يعمل • التطبيقات المحظورة في هذه الشبكة: " + count
-        else if (count > 0)
-            "هناك " + count + " قاعدة حظر محفوظة؛ VPN غير نشط"
-        else "الإنترنت مسموح للتطبيقات"
+        val fullyBlocked = apps.count {
+            ruleMode(it.packageName) == NetworkRulePolicy.DENY
+        }
+        val backgroundOnly = apps.count {
+            ruleMode(it.packageName) == NetworkRulePolicy.BACKGROUND
+        }
+        val rules = "حظر كامل: " + fullyBlocked + " • حظر الخلفية: " + backgroundOnly
+        val state = when {
+            LocalBlockVpnService.isMonitoring -> "حماية الإنترنت نشطة • " + rules
+            fullyBlocked + backgroundOnly > 0 -> "القواعد محفوظة؛ VPN غير نشط • " + rules
+            else -> "الإنترنت مسموح للتطبيقات"
+        }
         accessStatus.text = state
     }
 
