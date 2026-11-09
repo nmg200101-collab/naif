@@ -622,7 +622,8 @@ class InternetPanel(
 
                 // Query one summary per network, grouping by UID rather than doing
                 // hundreds of slow per-app system calls on the main thread.
-                fun byUid(type: Int): Map<Int, Long>? = try {
+                fun byUid(type: Int): Map<Int, Long>? {
+                    return try {
                     val stats = manager.querySummary(type, null, start, end)
                         ?: return null
                     val totals = mutableMapOf<Int, Long>()
@@ -637,7 +638,8 @@ class InternetPanel(
                         stats.close()
                     }
                     totals
-                } catch (_: Exception) { null }
+                    } catch (_: Exception) { null }
+                }
                 val wifiText = deviceTotal(ConnectivityManager.TYPE_WIFI)
                 val mobileText = deviceTotal(ConnectivityManager.TYPE_MOBILE)
                 val wifiMap = byUid(ConnectivityManager.TYPE_WIFI)
