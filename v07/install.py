@@ -27,5 +27,5 @@ for marker in ("ForegroundAppWatcher", "packagesForTransport", "isMonitoring",
     assert marker in service, marker
 assert "UsageEvents.Event.ACTIVITY_RESUMED" in watcher
 assert "snapshot" in watcher
-assert "versionName = \"0.7.0\"" in (root / "app/build.gradle.kts").read_text()
+assert any(v in (root / "app/build.gradle.kts").read_text() for v in ("versionName = \"0.7.0\"", "versionName = \"0.8.0\""))
 print("V0.7 foreground-aware rules and Android usage-consent checks OK")
