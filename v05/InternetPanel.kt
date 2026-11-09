@@ -141,7 +141,7 @@ class InternetPanel(
 
         val scroll = HorizontalScrollView(activity).apply {
             isHorizontalScrollBarEnabled = false
-            fillViewport = true
+            setFillViewport(true)
         }
         val options = linear(true)
         val labels = listOf("الواي فاي", "بيانات الهاتف", "استخدام البيانات", "VPN التسريع")
