@@ -70,6 +70,12 @@ class InternetPanel(
     private lateinit var usageAppsColumn: LinearLayout
     private var usagePeriod = 2 // 0 today, 1 last 7 days, 2 month
     private var statsGeneration = 0
+    private data class AppUsage(val name: String, val wifi: Long, val mobile: Long)
+    private var usageRows = emptyList<AppUsage>()
+    private var showAllUsage = false
+    private lateinit var usageInfo: TextView
+    private lateinit var usageAccess: Button
+    private lateinit var usageShowAll: Button
 
     private fun dp(value: Int): Int = (value * activity.resources.displayMetrics.density + 0.5f).toInt()
     private fun bg(color: Int, r: Int = 18, edge: Int = line): GradientDrawable =
@@ -365,7 +371,10 @@ class InternetPanel(
 
     fun onVpnGranted() = applyBlocker()
     fun onResume() {
-        if (profile != 2 && ::accessStatus.isInitialized) updateAccessStatus()
+        when (profile) {
+            0, 1 -> if (::accessStatus.isInitialized) updateAccessStatus()
+            2 -> if (::usageAppsColumn.isInitialized && usageAllowed()) loadUsage()
+        }
     }
 
     private fun applyBlocker() {
@@ -447,9 +456,23 @@ class InternetPanel(
     }
 
     private fun buildUsage() {
+        showAllUsage = false
+        usageRows = emptyList()
         val usage = card()
         usage.addView(styleText("▥  استخدام البيانات", 20f, ink, true))
-        usage.addView(styleText("الاستهلاك الفعلي خلال الشهر الحالي", 13f, muted))
+        usage.addView(styleText("إحصاءات حقيقية، لا قيم تقديرية، بعد منح إذن الاستخدام", 12f, muted))
+        val periods = linear(true)
+        listOf("اليوم", "آخر 7 أيام", "هذا الشهر").forEachIndexed { index, label ->
+            val b = action(label, if (usagePeriod == index) green else pale,
+                usagePeriod == index)
+            b.textSize = 12f
+            periods.addView(b, LinearLayout.LayoutParams(0, dp(48), 1f))
+            b.setOnClickListener {
+                usagePeriod = index
+                buildCurrentUsage()
+            }
+        }
+        usage.addView(periods)
         val row = linear(true)
         val w = linear().apply {
             background = bg(pale)
@@ -466,11 +489,79 @@ class InternetPanel(
         row.addView(w, LinearLayout.LayoutParams(0, -2, 1f))
         row.addView(m, LinearLayout.LayoutParams(0, -2, 1f))
         usage.addView(row)
-        val button = action("عرض إحصاءات الهاتف الفعلية", pale, false)
-        usage.addView(button)
-        button.setOnClickListener { loadUsage() }
+        val refresh = action("تحديث إحصاءات الاستهلاك", pale, false)
+        usage.addView(refresh)
+        refresh.setOnClickListener { loadUsage() }
+        usageAccess = action("منح إذن بيانات الاستخدام", blue)
+        usage.addView(usageAccess)
+        usageAccess.setOnClickListener {
+            try { activity.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+            catch (_: Exception) {
+                Toast.makeText(activity, "افتح إعدادات الوصول إلى الاستخدام يدويًا",
+                    Toast.LENGTH_LONG).show()
+            }
+        }
         root.addView(usage)
+
+        val perApp = card()
+        perApp.addView(styleText("▤  استهلاك كل تطبيق", 19f, ink, true))
+        perApp.addView(styleText("ترتيب التطبيقات الأعلى استهلاكًا مع فصل الواي فاي عن بيانات الهاتف",
+            12f, muted))
+        usageInfo = styleText("جارٍ إعداد التقرير…", 13f, muted)
+        perApp.addView(usageInfo)
+        usageAppsColumn = linear()
+        perApp.addView(usageAppsColumn)
+        usageShowAll = action("عرض كل التطبيقات المستهلكة", pale, false)
+        perApp.addView(usageShowAll)
+        usageShowAll.visibility = View.GONE
+        usageShowAll.setOnClickListener {
+            showAllUsage = !showAllUsage
+            renderUsageRows()
+        }
+        root.addView(perApp)
+
+        val limits = card()
+        limits.addView(styleText("حدود سرعة الإنترنت لكل تطبيق", 18f, ink, true))
+        limits.addView(styleText(
+            "غير مفعلة في هذا الإصدار. التحكم الفعلي في سرعة التحميل والرفع "
+              + "يحتاج محرك VPN يمرر الاتصالات ويطبّق معدل البايتات، "
+              + "ولا يمكن لمحرك حظر التطبيقات الحالي القيام بذلك.",
+            12f, muted))
+        root.addView(limits)
         loadUsage()
+    }
+
+    private fun buildCurrentUsage() {
+        // Rebuild only the usage page, preserving the chosen time period.
+        if (profile == 2) showProfile(2)
+    }
+
+    private fun renderUsageRows() {
+        if (!::usageAppsColumn.isInitialized) return
+        usageAppsColumn.removeAllViews()
+        if (usageRows.isEmpty()) {
+            usageAppsColumn.addView(styleText("لم تُسجّل بيانات تطبيقات متاحة لهذه الفترة",
+                12f, muted))
+            usageShowAll.visibility = View.GONE
+            return
+        }
+        val rows = if (showAllUsage) usageRows else usageRows.take(15)
+        rows.forEachIndexed { index, row ->
+            val item = linear().apply {
+                background = bg(pale, 12)
+                setPadding(dp(10), dp(7), dp(10), dp(7))
+            }
+            item.addView(styleText((index + 1).toString() + ". " + row.name,
+                14f, ink, true))
+            item.addView(styleText("واي فاي: " + humanBytes(row.wifi) +
+                "     بيانات الهاتف: " + humanBytes(row.mobile), 12f, muted))
+            usageAppsColumn.addView(item)
+            margin(item, 5)
+        }
+        usageShowAll.visibility =
+            if (usageRows.size > 15) View.VISIBLE else View.GONE
+        usageShowAll.text = if (showAllUsage) "عرض أول 15 تطبيقًا" else
+            "عرض كل التطبيقات المستهلكة (" + usageRows.size + ")"
     }
 
     private fun buildSummary() {
@@ -490,46 +581,100 @@ class InternetPanel(
     }
 
     private fun loadUsage() {
+        val generation = ++statsGeneration
+        if (!::wifiStat.isInitialized || !::usageAppsColumn.isInitialized) return
         if (!usageAllowed()) {
             wifiStat.text = "الواي فاي\nيلزم إذن الاستخدام"
             mobileStat.text = "بيانات الهاتف\nيلزم إذن الاستخدام"
-            val info = styleText("يلزم منح إذن «الوصول إلى بيانات الاستخدام» من إعدادات الهاتف.", 12f, muted)
-            (wifiStat.parent?.parent?.parent as? LinearLayout)?.let { parent ->
-                val open = action("منح إذن بيانات الاستخدام", blue)
-                if (parent.findViewWithTag<View>("usagePermissionBtn") == null) {
-                    open.tag = "usagePermissionBtn"
-                    parent.addView(open)
-                    open.setOnClickListener {
-                        activity.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                    }
-                }
-            }
+            usageInfo.text = "اسمح بالوصول إلى بيانات الاستخدام لعرض استهلاك التطبيقات."
+            usageAppsColumn.removeAllViews()
+            usageAccess.visibility = View.VISIBLE
+            usageShowAll.visibility = View.GONE
             return
         }
+        usageAccess.visibility = View.GONE
         wifiStat.text = "الواي فاي\nجارٍ التحميل…"
         mobileStat.text = "بيانات الهاتف\nجارٍ التحميل…"
-        thread(name="smart-control-stats") {
-            val stats = activity.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
-            val cal = Calendar.getInstance()
-            cal.set(Calendar.DAY_OF_MONTH, 1)
-            cal.set(Calendar.HOUR_OF_DAY, 0)
-            cal.set(Calendar.MINUTE, 0)
-            cal.set(Calendar.SECOND, 0)
-            val start = cal.timeInMillis
-            val end = System.currentTimeMillis()
-            fun read(type: Int): String {
-                return try {
-                    val bucket = stats.querySummaryForDevice(type, null, start, end)
-                    humanBytes(bucket.rxBytes + bucket.txBytes)
-                } catch (e: Exception) {
-                    "غير متاح على هذا الهاتف"
+        usageInfo.text = "جارٍ قراءة الاستهلاك من نظام أندرويد…"
+        usageAppsColumn.removeAllViews()
+        val period = usagePeriod
+        thread(name="smart-control-usage-report") {
+            try {
+                val manager = activity.getSystemService(Context.NETWORK_STATS_SERVICE)
+                    as NetworkStatsManager
+                val cal = Calendar.getInstance()
+                when (period) {
+                    0 -> { /* today */ }
+                    1 -> cal.add(Calendar.DAY_OF_YEAR, -6)
+                    else -> cal.set(Calendar.DAY_OF_MONTH, 1)
                 }
-            }
-            val wifi = read(ConnectivityManager.TYPE_WIFI)
-            val mobile = read(ConnectivityManager.TYPE_MOBILE)
-            activity.runOnUiThread {
-                if (::wifiStat.isInitialized) wifiStat.text = "الواي فاي\n" + wifi
-                if (::mobileStat.isInitialized) mobileStat.text = "بيانات الهاتف\n" + mobile
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                cal.set(Calendar.SECOND, 0)
+                cal.set(Calendar.MILLISECOND, 0)
+                val start = cal.timeInMillis
+                val end = System.currentTimeMillis()
+
+                fun deviceTotal(type: Int): String = try {
+                    val bucket = manager.querySummaryForDevice(type, null, start, end)
+                    humanBytes(bucket.rxBytes + bucket.txBytes)
+                } catch (_: Exception) { "غير متاح على هذا الهاتف" }
+
+                // Query one summary per network, grouping by UID rather than doing
+                // hundreds of slow per-app system calls on the main thread.
+                fun byUid(type: Int): Map<Int, Long>? = try {
+                    val stats = manager.querySummary(type, null, start, end)
+                        ?: return null
+                    val totals = mutableMapOf<Int, Long>()
+                    val bucket = NetworkStats.Bucket()
+                    try {
+                        while (stats.hasNextBucket()) {
+                            stats.getNextBucket(bucket)
+                            val bytes = (bucket.rxBytes + bucket.txBytes).coerceAtLeast(0L)
+                            totals[bucket.uid] = (totals[bucket.uid] ?: 0L) + bytes
+                        }
+                    } finally {
+                        stats.close()
+                    }
+                    totals
+                } catch (_: Exception) { null }
+                val wifiText = deviceTotal(ConnectivityManager.TYPE_WIFI)
+                val mobileText = deviceTotal(ConnectivityManager.TYPE_MOBILE)
+                val wifiMap = byUid(ConnectivityManager.TYPE_WIFI)
+                val mobileMap = byUid(ConnectivityManager.TYPE_MOBILE)
+                val rows = if (wifiMap == null && mobileMap == null)
+                    emptyList<AppUsage>()
+                else {
+                    apps.groupBy { it.uid }.mapNotNull { (uid, belonging) ->
+                        val w = wifiMap?.get(uid) ?: 0L
+                        val m = mobileMap?.get(uid) ?: 0L
+                        if (w + m <= 0) null else {
+                            val label = belonging.first().loadLabel(activity.packageManager)
+                                .toString() + if (belonging.size > 1)
+                                " (+${belonging.size - 1})" else ""
+                            AppUsage(label, w, m)
+                        }
+                    }.sortedByDescending { it.wifi + it.mobile }
+                }
+                activity.runOnUiThread {
+                    if (profile != 2 || generation != statsGeneration) return@runOnUiThread
+                    wifiStat.text = "الواي فاي\n" + wifiText
+                    mobileStat.text = "بيانات الهاتف\n" + mobileText
+                    usageRows = rows
+                    usageInfo.text = if (wifiMap == null && mobileMap == null)
+                        "تعذر عرض بيانات كل تطبيق على هذا الجهاز. قد يقيّد أندرويد الوصول."
+                    else "التطبيقات المستهلكة للبيانات: " + rows.size +
+                        " • بعض استهلاك النظام لا يظهر هنا"
+                    renderUsageRows()
+                }
+            } catch (_: Exception) {
+                activity.runOnUiThread {
+                    if (profile != 2 || generation != statsGeneration) return@runOnUiThread
+                    wifiStat.text = "الواي فاي\nتعذر القراءة"
+                    mobileStat.text = "بيانات الهاتف\nتعذر القراءة"
+                    usageInfo.text = "تعذر قراءة التقرير. تحقق من صلاحية الاستخدام."
+                    usageAppsColumn.removeAllViews()
+                }
             }
         }
     }
