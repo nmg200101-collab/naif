@@ -80,8 +80,8 @@ class SmartHomeHub(
             alignmentMode = GridLayout.ALIGN_BOUNDS
             useDefaultMargins = false
         }
-        val width = activity.resources.displayMetrics.widthPixels - dp(36)
-        val cellWidth = (width / 3).coerceAtLeast(dp(88))
+        val availableWidth = activity.resources.displayMetrics.widthPixels - dp(36)
+        val cellWidth = (availableWidth / 3).coerceAtLeast(dp(88))
         entries.forEachIndexed { index, item ->
             val card = LinearLayout(activity).apply {
                 orientation = LinearLayout.VERTICAL
