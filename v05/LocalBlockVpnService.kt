@@ -20,6 +20,7 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import java.io.FileInputStream
 import kotlin.concurrent.thread
+import java.util.Calendar
 
 /**
  * Local *blocking-only* VPN. Only applications marked blocked are routed to the local
@@ -52,6 +53,7 @@ class LocalBlockVpnService : VpnService() {
     private var activeSignature = ""
     private var activeTransport = ""
     private var foregroundWatcher: ForegroundAppWatcher? = null
+    private var quotaMonitor: DailyQuotaMonitor? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     override fun onCreate() {
@@ -73,6 +75,9 @@ class LocalBlockVpnService : VpnService() {
             main.post {
                 if (isMonitoring) installRules()
             }
+        }.also { it.start() }
+        quotaMonitor = DailyQuotaMonitor(this, prefs) {
+            main.post { if (isMonitoring) installRules() }
         }.also { it.start() }
     }
 
@@ -100,6 +105,7 @@ class LocalBlockVpnService : VpnService() {
             }
             isMonitoring = true
             installRules()
+            quotaMonitor?.resample()
         } catch (_: Exception) {
             stopSelf()
         }
@@ -147,14 +153,21 @@ class LocalBlockVpnService : VpnService() {
 
     private fun packagesForTransport(transport: String): List<String> {
         val state = foregroundWatcher?.snapshot
+        val now = Calendar.getInstance()
+        val today = DailyQuotaPolicy.dayCode(
+            now.get(Calendar.YEAR), now.get(Calendar.DAY_OF_YEAR))
         return supportedApplications()
             .filter { app ->
-                NetworkRulePolicy.isBlocked(
-                    mode = ruleMode(transport, app.packageName),
-                    packageName = app.packageName,
+                val pkg = app.packageName
+                val modeBlocked = NetworkRulePolicy.isBlocked(
+                    mode = ruleMode(transport, pkg),
+                    packageName = pkg,
                     foregroundPackage = state?.foregroundPackage,
                     foregroundReliable = state?.reliable ?: false
                 )
+                val limit = prefs.getInt("quota_" + transport + "_" + pkg, 0)
+                val reachedDay = prefs.getInt("quota_trip_" + transport + "_" + pkg, 0)
+                modeBlocked || DailyQuotaPolicy.activeBlock(limit, reachedDay, today)
             }
             .map { it.packageName }
     }
@@ -166,11 +179,9 @@ class LocalBlockVpnService : VpnService() {
             closeTunnel()
             activeTransport = ""
             activeSignature = ""
-            if (!prefs.getBoolean("all_wifi", false) &&
-                !prefs.getBoolean("all_mobile", false) &&
-                prefs.all.none { it.key.startsWith("rule_") && it.value == "deny" }) {
-                stopSelf()
-            }
+            // Retain monitoring while temporarily offline; the connection callback
+            // will reactivate rules when Wi-Fi/mobile data becomes available.
+            if (!hasAnyRules()) stopSelf()
             return
         }
         val packages = packagesForTransport(transport)
@@ -242,7 +253,8 @@ class LocalBlockVpnService : VpnService() {
         return listOf("wifi", "mobile").any { network ->
             NetworkRulePolicy.needsEnforcement(defaultMode(network)) ||
                 supportedApplications().any {
-                    NetworkRulePolicy.needsEnforcement(ruleMode(network, it.packageName))
+                    NetworkRulePolicy.needsEnforcement(ruleMode(network, it.packageName)) ||
+                    prefs.getInt("quota_" + network + "_" + it.packageName, 0) > 0
                 }
         }
     }
@@ -304,6 +316,8 @@ class LocalBlockVpnService : VpnService() {
         isMonitoring = false
         foregroundWatcher?.stop()
         foregroundWatcher = null
+        quotaMonitor?.stop()
+        quotaMonitor = null
         main.removeCallbacks(updateRunnable)
         networkCallback?.let {
             try { connectivity.unregisterNetworkCallback(it) } catch (_: Exception) {}
