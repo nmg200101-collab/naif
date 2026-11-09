@@ -1,0 +1,108 @@
+name: Package Smart Control V1.0.0 Existing APK
+on:
+  push:
+    branches: [distribution/smart-control-v1.0.0-zip]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify original APK and fetch previous reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s downloads/SmartControl-V1.0.0-debug.apk
+          sha256sum -c downloads/SmartControl-V1.0.0-debug.apk.sha256
+          git fetch --no-tags --depth=1 origin refs/heads/build/smart-control-v0.9.0
+          git show FETCH_HEAD:downloads/SmartControl-V0.9.0-debug.apk > /tmp/smart-control-v0.9.0-debug.apk
+          test -s /tmp/smart-control-v0.9.0-debug.apk
+      - name: Compare V0.9 and V1.0 APK signing certificates
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_SIGNER=$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)
+          test -n "$APK_SIGNER"
+          test -x "$APK_SIGNER"
+          "$APK_SIGNER" verify --verbose --print-certs downloads/SmartControl-V1.0.0-debug.apk > /tmp/signer-v1.txt
+          "$APK_SIGNER" verify --verbose --print-certs /tmp/smart-control-v0.9.0-debug.apk > /tmp/signer-v09.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          def get(path):
+              text = Path(path).read_text()
+              m = re.search(r"Signer #1 certificate SHA-256 digest:\s*([0-9a-fA-F]+)", text)
+              if not m:
+                  raise RuntimeError("Certificate fingerprint could not be parsed")
+              return m.group(1).lower()
+          old = get("/tmp/signer-v09.txt")
+          new = get("/tmp/signer-v1.txt")
+          matched = old == new
+          report = (
+              "Smart Control Android APK signing certificate comparison\n"
+              "Previous APK: SmartControl V0.9.0 debug APK\n"
+              f"Previous signer certificate SHA256: {old}\n"
+              "Current APK: SmartControl V1.0.0 debug APK\n"
+              f"Current signer certificate SHA256: {new}\n"
+              f"Same signing certificate: {'YES' if matched else 'NO'}\n"
+              "This comparison does not grant access to the private signing key.\n"
+              + (
+                  "Certificates match: Android may allow direct installation as an update "
+                  "if package ID, version and device policy also permit it.\n"
+                  if matched else
+                  "Certificates differ: an in-place APK update over V0.9.0 will be rejected. "
+                  "The old private signing key is required to create a same-signer update.\n"
+              )
+          )
+          Path("downloads/SIGNATURE-CHECK-V1.0.0.txt").write_text(report)
+          print(report)
+          PY
+      - name: Create user-friendly compressed installer ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          import hashlib
+          original=Path("downloads/SmartControl-V1.0.0-debug.apk")
+          report=Path("downloads/SIGNATURE-CHECK-V1.0.0.txt")
+          sidecar=Path("downloads/SmartControl-V1.0.0-debug.apk.sha256")
+          out=Path("downloads/SmartControl-V1.0.0-APK.zip")
+          readme="""التحكم الذكي V1.0.0 — حزمة التثبيت
+          
+          1) فك ضغط الحزمة.
+          2) افتح ملف SmartControl-V1.0.0-debug.apk وثبته على أندرويد.
+          3) اقرأ ملف SIGNATURE-CHECK-V1.0.0.txt لمعرفة نتيجة مقارنة توقيع هذه النسخة بالنسخة V0.9.0.
+          4) إذا اختلف التوقيع فلا يمكن تثبيت النسخة فوق القديمة دون مفتاح التوقيع الخاص السابق؛ لا تحذف التطبيق قبل حفظ بياناتك المحلية إذا كانت مهمة.
+          5) هذه نسخة Debug تجريبية؛ لم يتم اختبار ميزات قفل التطبيقات بالكامل على هاتف فعلي.
+          
+          الملف المضغوط يحتوي على APK الأصلي كما هو دون إعادة بناء أو إعادة توقيع.
+          """
+          with ZipFile(out,"w",compression=ZIP_DEFLATED,compresslevel=8) as z:
+              z.write(original,arcname=original.name)
+              z.write(sidecar,arcname=sidecar.name)
+              z.write(report,arcname=report.name)
+              z.writestr("اقرأني-التثبيت.txt",readme)
+          with ZipFile(out) as z:
+              assert z.testzip() is None
+              assert hashlib.sha256(z.read(original.name)).digest()==hashlib.sha256(original.read_bytes()).digest()
+          digest=hashlib.sha256(out.read_bytes()).hexdigest()
+          Path(str(out)+".sha256").write_text(f"{digest}  {out}\n")
+          print("ZIP:",out,out.stat().st_size, "bytes, SHA256",digest)
+          PY
+      - name: Publish ZIP without rebuilding or resigning APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/SmartControl-V1.0.0-APK.zip downloads/SmartControl-V1.0.0-APK.zip.sha256 downloads/SIGNATURE-CHECK-V1.0.0.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "package: preserve V1.0.0 APK and publish ZIP with signing certificate comparison [skip ci]"
+            git push origin HEAD:distribution/smart-control-v1.0.0-zip
+          fi
