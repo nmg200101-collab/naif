@@ -36,7 +36,9 @@ assert dim.get(a("id"))=="@+id/panelDim"
 assert advanced.get(a("id"))=="@+id/advancedPanel"
 assert tabs.get(a("orientation"))=="horizontal"
 footer.set(a("text"),"التحكم الذكي V0.9.0 • الخصوصية والميزات المحلية • النسخة التجريبية")
-header[1].set(a("text"),"إدارة شاملة للهاتف والحماية وتخصيص الأدوات")
+assert len(list(header)) >= 3, "Unexpected header hierarchy"
+header[1].set(a("text"),"التحكم الذكي")
+header[2].set(a("text"),"إدارة شاملة للهاتف والحماية وتخصيص الأدوات")
 tabs.set(a("visibility"),"gone")
 advanced_button.set(a("visibility"),"gone")
 for child in (screen,tap,dim,internet):
@@ -92,7 +94,7 @@ assert needle in s
 s=s.replace(needle,needle+"""        dashboardHome = findViewById(R.id.dashboardHome)
         panelHotspot = findViewById(R.id.panelHotspot)
         panelFeature = findViewById(R.id.panelFeature)
-        mainTabs = findViewById(R.id.tabTime).parent as View
+        mainTabs = findViewById<View>(R.id.tabTime).parent as View
         homeNavButton = findViewById(R.id.btnGoHome)
         hotspotController = HotspotPanel(this, findViewById(R.id.panelHotspot))
         futureController = FeatureGateway(this, findViewById(R.id.panelFeature)) {
