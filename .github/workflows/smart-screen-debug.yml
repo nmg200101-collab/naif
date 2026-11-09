@@ -1,7 +1,7 @@
-name: Smart Screen Control APK
+name: Smart Control V0.5.0 APK
 on:
   push:
-    branches: [build/smart-screen-control-v0.4.0]
+    branches: [build/smart-control-v0.5.0]
   workflow_dispatch:
 jobs:
   build:
@@ -42,12 +42,14 @@ jobs:
           PY
       - name: Apply professional tabs and night dim filter
         run: python3 tools/upgrade_v04.py
+      - name: Apply Smart Control light visual and internet manager
+        run: python3 v05/upgrade.py
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartScreenControl-v0.4.0-debug-apk
+          name: SmartScreenControl-v0.5.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -57,12 +59,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.4.0-debug.apk
-          sha256sum downloads/SmartScreenControl-V0.4.0-debug.apk > downloads/SmartScreenControl-V0.4.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.5.0-debug.apk
+          sha256sum downloads/SmartScreenControl-V0.5.0-debug.apk > downloads/SmartScreenControl-V0.5.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartScreenControl-V0.4.0-debug.apk downloads/SmartScreenControl-V0.4.0-debug.apk.sha256
+          git add downloads/SmartScreenControl-V0.5.0-debug.apk downloads/SmartScreenControl-V0.5.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.4.0 APK [skip ci]"
-            git push origin HEAD:build/smart-screen-control-v0.4.0
+            git commit -m "build: publish Smart Screen Control v0.5.0 APK [skip ci]"
+            git push origin HEAD:build/smart-control-v0.5.0
           fi
