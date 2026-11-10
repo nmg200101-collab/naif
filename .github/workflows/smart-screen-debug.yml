@@ -25,12 +25,19 @@ jobs:
           gradle-version: '8.9'
       - name: Extract verified source
         run: tar -xJf source.tar.xz
+      - name: Apply v0.3.0 compact tools and native 3x3 pattern
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/screen-updates/main.kt.xz.b64.part{1,2,3,4} | base64 --decode | xz --decompress > app/src/main/java/com/smartscreen/control/MainActivity.kt
+          echo 'd3a55120e17f6250f359520605cec83ff7d5459bdd78f32b1e8c951d316598b4  app/src/main/java/com/smartscreen/control/MainActivity.kt' | sha256sum --check
+          sed -i -e 's/versionCode = 2/versionCode = 3/' -e 's/versionName = "0.2.0"/versionName = "0.3.0"/' app/build.gradle.kts
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartScreenControl-v0.2.0-debug-apk
+          name: SmartScreenControl-v0.3.0-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -40,12 +47,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.2.0-debug.apk
-          sha256sum downloads/SmartScreenControl-V0.2.0-debug.apk > downloads/SmartScreenControl-V0.2.0-debug.apk.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartScreenControl-V0.3.0-debug.apk
+          sha256sum downloads/SmartScreenControl-V0.3.0-debug.apk > downloads/SmartScreenControl-V0.3.0-debug.apk.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartScreenControl-V0.2.0-debug.apk downloads/SmartScreenControl-V0.2.0-debug.apk.sha256
+          git add downloads/SmartScreenControl-V0.3.0-debug.apk downloads/SmartScreenControl-V0.3.0-debug.apk.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Screen Control v0.2.0 APK [skip ci]"
+            git commit -m "build: publish Smart Screen Control v0.3.0 APK [skip ci]"
             git push origin HEAD:build/smart-screen-control-v0.2.0
           fi
