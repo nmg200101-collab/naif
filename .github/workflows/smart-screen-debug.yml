@@ -31,6 +31,7 @@ jobs:
           set -euo pipefail
           cat .github/screen-updates/main.kt.xz.b64.part{1,2,3,4} | base64 --decode | xz --decompress > app/src/main/java/com/smartscreen/control/MainActivity.kt
           echo 'd3a55120e17f6250f359520605cec83ff7d5459bdd78f32b1e8c951d316598b4  app/src/main/java/com/smartscreen/control/MainActivity.kt' | sha256sum --check
+          sed -i 's/fillViewport =/isFillViewport =/g' app/src/main/java/com/smartscreen/control/MainActivity.kt
           sed -i -e 's/versionCode = 2/versionCode = 3/' -e 's/versionName = "0.2.0"/versionName = "0.3.0"/' app/build.gradle.kts
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
