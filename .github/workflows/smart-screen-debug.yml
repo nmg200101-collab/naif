@@ -72,9 +72,11 @@ jobs:
           mkdir -p downloads
           cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V1.1.0-RC1.apk
           sha256sum downloads/SmartControl-V1.1.0-RC1.apk > downloads/SmartControl-V1.1.0-RC1.apk.sha256
+          python3 -c 'import zipfile; z=zipfile.ZipFile("downloads/SmartControl-V1.1.0-RC1-APK.zip","w",zipfile.ZIP_DEFLATED,9); z.write("downloads/SmartControl-V1.1.0-RC1.apk",arcname="SmartControl-V1.1.0-RC1.apk"); z.close()'
+          sha256sum downloads/SmartControl-V1.1.0-RC1-APK.zip > downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256
+          git add downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256
           if ! git diff --cached --quiet; then
             git commit -m "build: publish Smart Control v1.1.0 RC APK [skip ci]"
             git push origin HEAD:build/smart-control-v1.1.0
@@ -89,7 +91,7 @@ jobs:
           set -euo pipefail
           TAG="smart-control-v1.1.0-rc1"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "التحكم الذكي 1.1.0 · إصدار تجريبي متقدم" --notes-file RELEASE_NOTES_V1.1.0.md --prerelease
+            gh release create "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "التحكم الذكي 1.1.0 · إصدار تجريبي متقدم" --notes-file RELEASE_NOTES_V1.1.0.md --prerelease
           fi
