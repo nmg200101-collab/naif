@@ -1,7 +1,7 @@
-name: Smart Control V1.1.0 RC Android APK
+name: Smart Control V1.2.0 Preview Android APK
 on:
   push:
-    branches: [build/smart-control-v1.1.0]
+    branches: [build/smart-control-v1.2.0]
   workflow_dispatch:
 jobs:
   build:
@@ -55,12 +55,23 @@ jobs:
           grep -q 'InternetFirewallVpnService' app/src/main/AndroidManifest.xml
           grep -q 'PACKAGE_USAGE_STATS' app/src/main/AndroidManifest.xml
           grep -q 'التحكم الذكي' app/src/main/AndroidManifest.xml
+      - name: Apply V1.2.0 compact dashboard and per-transport rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .github/screen-updates/v1.2-ui.patch.xz.b64 > /tmp/smart-control-v1.2-ui.patch.xz
+          echo 'c852178c0467a45b3d2cb2cb7ce2920a35ff0f458a049d1720ecc4fb94479a3f  /tmp/smart-control-v1.2-ui.patch.xz' | sha256sum --check
+          xz -dc /tmp/smart-control-v1.2-ui.patch.xz | patch -p1
+          sed -i -e 's/versionCode = 11/versionCode = 12/' -e 's/versionName = "1.1.0"/versionName = "1.2.0"/' app/build.gradle.kts
+          grep -q 'versionCode = 12' app/build.gradle.kts
+          grep -q 'FirewallSelection.set' app/src/main/java/com/smartscreen/control/MainActivity.kt
+          grep -q 'getNetworkCapabilities' app/src/main/java/com/smartscreen/control/InternetFirewallVpnService.kt
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Store installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SmartControl-v1.1.0-rc1-apk
+          name: SmartControl-v1.2.0-rc1-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
@@ -70,15 +81,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p downloads
-          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V1.1.0-RC1.apk
-          sha256sum downloads/SmartControl-V1.1.0-RC1.apk > downloads/SmartControl-V1.1.0-RC1.apk.sha256
-          python3 -c 'import zipfile; z=zipfile.ZipFile("downloads/SmartControl-V1.1.0-RC1-APK.zip","w",zipfile.ZIP_DEFLATED,9); z.write("downloads/SmartControl-V1.1.0-RC1.apk",arcname="SmartControl-V1.1.0-RC1.apk"); z.close()'
-          sha256sum downloads/SmartControl-V1.1.0-RC1-APK.zip > downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256
+          cp app/build/outputs/apk/debug/app-debug.apk downloads/SmartControl-V1.2.0-RC1.apk
+          sha256sum downloads/SmartControl-V1.2.0-RC1.apk > downloads/SmartControl-V1.2.0-RC1.apk.sha256
+          python3 -c 'import zipfile; z=zipfile.ZipFile("downloads/SmartControl-V1.2.0-RC1-APK.zip","w",zipfile.ZIP_DEFLATED,9); z.write("downloads/SmartControl-V1.2.0-RC1.apk",arcname="SmartControl-V1.2.0-RC1.apk"); z.close()'
+          sha256sum downloads/SmartControl-V1.2.0-RC1-APK.zip > downloads/SmartControl-V1.2.0-RC1-APK.zip.sha256
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256
+          git add downloads/SmartControl-V1.2.0-RC1.apk downloads/SmartControl-V1.2.0-RC1.apk.sha256 downloads/SmartControl-V1.2.0-RC1-APK.zip downloads/SmartControl-V1.2.0-RC1-APK.zip.sha256
           if ! git diff --cached --quiet; then
-            git commit -m "build: publish Smart Control v1.1.0 RC APK [skip ci]"
+            git commit -m "build: publish Smart Control v1.2.0 RC APK [skip ci]"
             git push origin HEAD:build/smart-control-v1.1.0
           fi
 
@@ -89,9 +100,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="smart-control-v1.1.0-rc1"
+          TAG="smart-control-v1.2.0-rc1"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$TAG" downloads/SmartControl-V1.2.0-RC1.apk downloads/SmartControl-V1.2.0-RC1.apk.sha256 downloads/SmartControl-V1.2.0-RC1-APK.zip downloads/SmartControl-V1.2.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$TAG" downloads/SmartControl-V1.1.0-RC1.apk downloads/SmartControl-V1.1.0-RC1.apk.sha256 downloads/SmartControl-V1.1.0-RC1-APK.zip downloads/SmartControl-V1.1.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "التحكم الذكي 1.1.0 · إصدار تجريبي متقدم" --notes-file RELEASE_NOTES_V1.1.0.md --prerelease
+            gh release create "$TAG" downloads/SmartControl-V1.2.0-RC1.apk downloads/SmartControl-V1.2.0-RC1.apk.sha256 downloads/SmartControl-V1.2.0-RC1-APK.zip downloads/SmartControl-V1.2.0-RC1-APK.zip.sha256 --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "التحكم الذكي 1.2.0 · واجهة إنترنت مضغوطة" --notes-file RELEASE_NOTES_V1.2.0.md --prerelease
           fi
