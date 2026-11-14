@@ -1,0 +1,26 @@
+name: Smart Control V1.2 Source Export
+on:
+  push:
+    branches: [build/smart-control-v1.2.0]
+  workflow_dispatch:
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract original Android project and overlays
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xJf source.tar.xz
+          cat .github/screen-updates/main.kt.xz.b64.part{1,2,3,4} | base64 --decode | xz --decompress > app/src/main/java/com/smartscreen/control/MainActivity.kt
+          sed -i 's/fillViewport =/isFillViewport =/g' app/src/main/java/com/smartscreen/control/MainActivity.kt
+          base64 --decode .github/screen-updates/v0.4-overlay.tar.xz.b64 | tar -xJf -
+          base64 --decode .github/screen-updates/v1.1-overlay.tar.xz.b64 | tar -xJf -
+          test -f app/src/main/java/com/smartscreen/control/MainActivity.kt
+          zip -q -r smart-control-v1.1-source.zip app build.gradle.kts settings.gradle.kts gradle.properties
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smart-control-v1.1-exported-source
+          path: smart-control-v1.1-source.zip
+          retention-days: 3
