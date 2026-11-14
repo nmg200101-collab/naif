@@ -79,6 +79,7 @@ jobs:
           grep -q 'renderInternetUnified' app/src/main/java/com/smartscreen/control/MainActivity.kt
           grep -q 'TransportRuleBatch.update' app/src/main/java/com/smartscreen/control/InternetFirewallVpnService.kt
           test -f app/src/test/java/com/smartscreen/control/TransportRuleBatchTest.kt
+          sed -i '/private var hotspotPreferredSource = "mobile"/i\    private var internetMode = 2 // compatibility with legacy inactive view helpers' app/src/main/java/com/smartscreen/control/MainActivity.kt
       - name: Unit tests and compile APK
         run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace --no-daemon
       - name: Store installable debug APK
