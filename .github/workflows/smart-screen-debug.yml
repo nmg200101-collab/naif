@@ -62,6 +62,7 @@ jobs:
           base64 --decode .github/screen-updates/v1.2-ui.patch.xz.b64 > /tmp/smart-control-v1.2-ui.patch.xz
           echo 'c852178c0467a45b3d2cb2cb7ce2920a35ff0f458a049d1720ecc4fb94479a3f  /tmp/smart-control-v1.2-ui.patch.xz' | sha256sum --check
           xz -dc /tmp/smart-control-v1.2-ui.patch.xz | patch -p1
+          sed -i 's/apply{action=InternetFirewallVpnService.ACTION_STOP/apply{this.action=InternetFirewallVpnService.ACTION_STOP/' app/src/main/java/com/smartscreen/control/MainActivity.kt
           sed -i -e 's/versionCode = 11/versionCode = 12/' -e 's/versionName = "1.1.0"/versionName = "1.2.0"/' app/build.gradle.kts
           grep -q 'versionCode = 12' app/build.gradle.kts
           grep -q 'FirewallSelection.set' app/src/main/java/com/smartscreen/control/MainActivity.kt
