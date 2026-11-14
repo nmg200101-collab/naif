@@ -91,7 +91,7 @@ jobs:
           git add downloads/SmartControl-V1.2.0-RC1.apk downloads/SmartControl-V1.2.0-RC1.apk.sha256 downloads/SmartControl-V1.2.0-RC1-APK.zip downloads/SmartControl-V1.2.0-RC1-APK.zip.sha256
           if ! git diff --cached --quiet; then
             git commit -m "build: publish Smart Control v1.2.0 RC APK [skip ci]"
-            git push origin HEAD:build/smart-control-v1.1.0
+            git push origin HEAD:build/smart-control-v1.2.0
           fi
 
       - name: Publish stable GitHub Release installer (pre-release)
