@@ -9,7 +9,7 @@
 <link rel="icon" href="./teacher-results-icon.svg" type="image/svg+xml">
 <title>نتائج طلابي</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#19344b;font:16px/1.7 system-ui,Tahoma,Arial}main{max-width:850px;margin:auto;padding:18px 14px calc(24px + env(safe-area-inset-bottom))}header,.panel{background:#fff;border-radius:16px;padding:20px;margin:12px 0;box-shadow:0 3px 15px #0e345510}header{border-top:4px solid #176a9c}h1{margin:0;font-size:25px}h2{margin:0 0 8px}p{margin:6px 0;color:#596c7d}button,input{font:inherit;border-radius:10px;padding:12px;border:1px solid #b6c7d7}button{background:#176a9c;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.55;cursor:wait}input{width:100%;margin:7px 0 12px}section[hidden]{display:none}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px;margin:0}.stat{font-weight:bold;margin:12px 0}.stats{display:flex;gap:8px;flex-wrap:wrap}.chip{background:#e9f2f8;padding:7px 11px;border-radius:999px;font-size:14px}table{width:100%;border-collapse:collapse;background:white}td,th{padding:10px 7px;text-align:right;border-bottom:1px solid #e4eaf0;font-size:14px;white-space:nowrap}th{background:#e9f2f8}small{color:#607184}#msg{color:#a34520;min-height:1.5em}.scroll{overflow:auto;border-radius:10px}nav{display:flex;background:white;border-radius:12px;overflow:hidden;margin:12px 0;position:sticky;top:0;z-index:2;box-shadow:0 2px 10px #0e345510}nav button{flex:1;border-radius:0;background:white;color:#385b78;border-bottom:3px solid transparent;font-weight:bold;padding:12px 4px}nav button.active{color:#12669a;border-color:#12669a;background:#e9f5fd}.question{padding:12px 0;border-bottom:1px solid #e0e7ee}.muted{color:#607184}.link{display:inline-block;background:#176a9c;color:white;padding:10px 15px;border-radius:9px;text-decoration:none}.switch{width:auto}.install{display:inline-block;margin-top:12px;background:#13815c}.compact td,.compact th{padding:5px 4px;font-size:12px}.hint{padding:12px;background:#eff7fb;border-radius:10px}.empty{text-align:center;padding:22px;color:#607184}.danger{background:#fff4ef;color:#8d3d1e;padding:10px;border-radius:9px}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#19344b;font:16px/1.7 system-ui,Tahoma,Arial}main{max-width:850px;margin:auto;padding:18px 14px calc(24px + env(safe-area-inset-bottom))}header,.panel{background:#fff;border-radius:16px;padding:20px;margin:12px 0;box-shadow:0 3px 15px #0e345510}header{border-top:4px solid #176a9c}h1{margin:0;font-size:25px}h2{margin:0 0 8px}p{margin:6px 0;color:#596c7d}button,input,select{font:inherit;border-radius:10px;padding:12px;border:1px solid #b6c7d7}button{background:#176a9c;color:#fff;border:0;cursor:pointer}button:disabled{opacity:.55;cursor:wait}input{width:100%;margin:7px 0 12px}section[hidden]{display:none}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px;margin:0}.stat{font-weight:bold;margin:12px 0}.stats{display:flex;gap:8px;flex-wrap:wrap}.chip{background:#e9f2f8;padding:7px 11px;border-radius:999px;font-size:14px}table{width:100%;border-collapse:collapse;background:white}td,th{padding:10px 7px;text-align:right;border-bottom:1px solid #e4eaf0;font-size:14px;white-space:nowrap}th{background:#e9f2f8}small{color:#607184}#msg{color:#a34520;min-height:1.5em}.scroll{overflow:auto;border-radius:10px}nav{display:flex;background:white;border-radius:12px;overflow:hidden;margin:12px 0;position:sticky;top:0;z-index:2;box-shadow:0 2px 10px #0e345510}nav button{flex:1;border-radius:0;background:white;color:#385b78;border-bottom:3px solid transparent;font-weight:bold;padding:12px 4px}nav button.active{color:#12669a;border-color:#12669a;background:#e9f5fd}.question{padding:12px 0;border-bottom:1px solid #e0e7ee}.muted{color:#607184}.link{display:inline-block;background:#176a9c;color:white;padding:10px 15px;border-radius:9px;text-decoration:none}.switch{width:auto}.install{display:inline-block;margin-top:12px;background:#13815c}.compact td,.compact th{padding:5px 4px;font-size:12px}.hint{padding:12px;background:#eff7fb;border-radius:10px}.empty{text-align:center;padding:22px;color:#607184}.danger{background:#fff4ef;color:#8d3d1e;padding:10px;border-radius:9px}
 </style>
 </head>
 <body>
@@ -21,10 +21,10 @@
 <button id="installApp" class="install" type="button">إضافة اختصار إلى شاشة الهاتف</button>
 </header>
 <nav aria-label="أقسام التقويم"><button class="active" data-tab="questions" aria-selected="true">الأسئلة</button><button data-tab="report" aria-selected="false">نتائج طلابي</button><button data-tab="settings" aria-selected="false">الإعدادات</button></nav>
-<section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>التقييمات المنشورة — علم النفس التربوي</p><p><a class="link" href="./assessment-template.html?quiz=psychology-35-45-20261118-p1" target="_blank" rel="noopener">الاختبار الأول (36 سؤالًا)</a> <a class="link" href="./assessment-template.html?quiz=psychology-46-61-20261118-p2" target="_blank" rel="noopener">الاختبار الثاني (55 سؤالًا)</a></p><p>يظهر أدناه الاختبار السابق ذي الثلاثين سؤالًا للأرشيف.</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
+<section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>التقييمات المنشورة — علم النفس التربوي</p><p><a class="link" href="./assessment-template.html?quiz=psychology-35-45-20261118-p1" target="_blank" rel="noopener">الاختبار الأول (36 سؤالًا)</a> <a class="link" href="./assessment-template.html?quiz=psychology-46-61-20261118-p2" target="_blank" rel="noopener">الاختبار الثاني (55 سؤالًا)</a></p><p>يظهر أدناه الاختبار السابق ذي الثلاثين سؤالًا للأرشيف.</p><div class="bar"><label>المادة <select id="questionSubject"></select></label><label>التقييم <select id="questionAssessment"></select></label></div><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
 <section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث النتائج تلقائيًا كل 30 ثانية عند عرض الكشف</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>تُرسل رسائل الدخول إلى البريد المعتمد للأستاذ.</p><p class="hint">لا تُحفظ كلمة المرور. يحفظ Supabase جلسة الدخول في هذا المتصفح عبر اتصال HTTPS ويجددها تلقائيًا. استخدم اختصارك على هاتفك الشخصي، وسجّل الخروج عند استخدام جهاز مشترك.</p><small>إعدادات عرض الاختبار محفوظة على هذا الهاتف. نشر الأسئلة محفوظ على الخادم.</small></section>
 <section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>أرسل رابط التأكيد إلى البريد المعتمد وافتحه على هذا الهاتف. إذا تضمنت الرسالة رمزًا من 6 أرقام، أدخله هنا:</p><p><strong>حساب الأستاذ المعتمد</strong></p><button id="send" type="button">إرسال رمز دخول</button><div id="otpArea" hidden><label for="otp">رمز التحقق</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="الرمز المكوّن من 6 أرقام (إن وُجد)"><button id="verify" type="button">تأكيد الدخول</button><p class="hint">افتح أحدث رسالة وصلتك فقط، ثم اضغط رابط التأكيد. سيعود بك الرابط إلى كشف النتائج مباشرة. لا تستخدم رابطًا قديمًا سبق فتحه أو انتهت صلاحيته.</p></div></section>
-<section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th><th>إدارة</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p><hr><h2>علم النفس التربوي — نتائج الاختبارين المرتبطة</h2><p>يُربط الاختباران برقم الطالب، وتُعرض آخر محاولة محفوظة لكل جزء. لا تختلط النتائج بتقييم ثقافة عربية.</p><div class="bar"><button id="exportPsych" type="button">تصدير كشف علم النفس إلى Excel</button><button id="refreshPsych" type="button">تحديث نتائج الاختبارين</button></div><div id="psychStats" class="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>رقم الطالب</th><th>اسم الطالب</th><th>الاختبار الأول /36</th><th>الاختبار الثاني /55</th><th>المجموع /91</th><th>الحالة</th></tr></thead><tbody id="psychRows"><tr><td colspan="6">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div></section>
+<section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="bar"><label>المادة <select id="resultSubject"></select></label><label>التقييم <select id="resultAssessment"></select></label></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th><th>إدارة</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p><hr><h2>علم النفس التربوي — نتائج الاختبارين المرتبطة</h2><p>تُعرض كل محاولة مستقلة دون اشتراط رقم الطالب، ودون دمج الطلاب المتشابهة أسماؤهم.</p><div class="bar"><button id="exportPsych" type="button">تصدير كشف علم النفس إلى Excel</button><button id="refreshPsych" type="button">تحديث نتائج الاختبارين</button></div><div id="psychStats" class="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>رقم الطالب</th><th>اسم الطالب</th><th>الاختبار الأول /36</th><th>الاختبار الثاني /55</th><th>المجموع /91</th><th>الحالة</th></tr></thead><tbody id="psychRows"><tr><td colspan="6">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div></section>
 <section class="panel" id="msg" role="status" aria-live="polite"></section>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
@@ -36,6 +36,12 @@ const API="https://nicgczedldimtcnlawjo.supabase.co/functions/v1";
 const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"naif-teacher-results-auth-v1"}});
 const $=id=>document.getElementById(id);
 let results=[],tab="questions",loadSerial=0,installPrompt=null;
+const CATALOG=[{"id":"maharat-arabic-1-hamza-middle-final-20261104-rev2","subject":"ثقافة عربية","label":"الهمزة المتوسطة والمتطرفة","n":30},{"id":"psychology-35-45-20261118-p1","subject":"علم النفس التربوي","label":"التقييم الأول (35–45)","n":36},{"id":"psychology-46-61-20261118-p2","subject":"علم النفس التربوي","label":"التقييم الثاني (46–61)","n":55},{"id":"psychology-lecture-1-30-v1","subject":"علم النفس التربوي","label":"المحاضرة الأولى","n":30},{"id":"maharat-arabic-1-2026-resend-20261101","subject":"مهارات عربية 1","label":"إعادة الإرسال","n":50},{"id":"maharat-arabic-1-2026-resend-40-20261101","subject":"مهارات عربية 1","label":"إعادة الإرسال (40)","n":40},{"id":"maharat-arabic-1-2026-v1","subject":"مهارات عربية 1","label":"التقييم الشامل","n":50},{"id":"maharat-arabic-1-lecture-1-tf-20261103","subject":"مهارات عربية 1","label":"المحاضرة الأولى","n":40},{"id":"maharat-arabic-1-lectures-1-2-mixed-20261104","subject":"مهارات عربية 1","label":"المحاضرتان الأولى والثانية","n":51}];
+const subjectOptions=["الكل","علم النفس التربوي","ثقافة عربية","مهارات عربية 1"];
+const selectOptions=items=>items.map(x=>'<option value="'+safe(x.value)+'">'+safe(x.label)+'</option>').join("");
+function fillFilters(){for(const prefix of ["question","result"]){$(prefix+"Subject").innerHTML=selectOptions(subjectOptions.map(x=>({value:x,label:x==="الكل"?"جميع المواد":x})));}updateAssessmentFilters("question");updateAssessmentFilters("result");}
+function updateAssessmentFilters(prefix){const subject=$(prefix+"Subject").value;const options=CATALOG.filter(x=>subject==="الكل"||x.subject===subject);$(prefix+"Assessment").innerHTML=selectOptions([{value:"الكل",label:"جميع التقييمات"},...options.map(x=>({value:x.id,label:x.label+" — "+x.n+" سؤالًا"}))]);}
+function matchesFilter(quizId,prefix){const subject=$(prefix+"Subject").value,assessment=$(prefix+"Assessment").value,entry=CATALOG.find(x=>x.id===quizId);return (subject==="الكل"||entry?.subject===subject)&&(assessment==="الكل"||quizId===assessment);}
 const PSY1="psychology-35-45-20261118-p1",PSY2="psychology-46-61-20261118-p2";
 const msg=s=>$("msg").textContent=s;
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -63,9 +69,9 @@ async function load(){
 }
 function render(){
  const query=$("search").value.trim().toLocaleLowerCase("ar");
- const filtered=results.filter(row=>(String(row.student_name||"")+" "+String(row.student_number||"")).toLocaleLowerCase("ar").includes(query));
- const names=new Set(results.map(row=>String(row.student_name||"").trim()).filter(Boolean));
- $("stats").innerHTML='<span class="chip">المحاولات: '+results.length+'</span><span class="chip">الطلاب: '+names.size+'</span><span class="chip">المعروض: '+filtered.length+'</span>';
+ const filtered=results.filter(row=>matchesFilter(row.quiz_id,"result")).filter(row=>(String(row.student_name||"")+" "+String(row.student_number||"")).toLocaleLowerCase("ar").includes(query));
+ const names=new Set(filtered.map(row=>String(row.student_name||"").trim()).filter(Boolean));
+ $("stats").innerHTML='<span class="chip">المحاولات: '+filtered.length+'</span><span class="chip">الطلاب: '+names.size+'</span><span class="chip">المعروض: '+filtered.length+'</span>';
  $("rows").innerHTML=filtered.map(row=>{
   const date=new Date(row.submitted_at);
   const submitted=Number.isNaN(date.getTime())?"—":date.toLocaleString("ar-YE",{timeZone:"Asia/Aden",dateStyle:"short",timeStyle:"short"});
@@ -74,35 +80,14 @@ function render(){
  renderPsych();
 }
 $("rows").addEventListener("click",async event=>{const control=event.target.closest("[data-attempt]");if(!control)return;const id=control.dataset.attempt;const record=results.find(x=>String(x.id)===id);if(!record)return;if(!confirm("هل تريد حذف هذه المحاولة فقط للطالب "+record.student_name+"؟ لا يمكن التراجع."))return;control.disabled=true;msg("جارٍ معالجة طلب الحذف...");try{const {data:{session}}=await db.auth.getSession();if(!session)throw Error("يلزم تسجيل دخول الأستاذ");const response=await fetch(API+"/teacher-results-api",{method:"DELETE",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({id})});const body=await response.json();if(!response.ok||body.deleted!==true)throw Error(body.error||"لم يؤكد الخادم الحذف");results=results.filter(x=>String(x.id)!==id);render();msg("تم حذف المحاولة المحددة بنجاح.");}catch(error){control.disabled=false;msg("فشل الحذف: "+error.message);}});
-function pairedPsychologyResults(){
- const joined=new Map();
- for(const r of [...results].reverse()){
-  if(r.quiz_id!==PSY1&&r.quiz_id!==PSY2)continue;
-  const number=String(r.student_number||"").trim().toUpperCase();
-  if(!number)continue;
-  const entry=joined.get(number)||{number,name:"",one:null,two:null};
-  entry.name=String(r.student_name||entry.name);
-  entry[r.quiz_id===PSY1?"one":"two"]=r;
-  joined.set(number,entry);
- }
- return [...joined.values()].sort((a,b)=>a.number.localeCompare(b.number,"ar",{numeric:true}));
-}
-function renderPsych(){
- const textQuery=$("search").value.trim().toLocaleLowerCase("ar");
- const records=pairedPsychologyResults().filter(x=>(x.number+" "+x.name).toLocaleLowerCase("ar").includes(textQuery));
- const all=pairedPsychologyResults(),completed=all.filter(x=>x.one&&x.two).length;
- $("psychStats").innerHTML='<span class="chip">الطلاب: '+all.length+'</span><span class="chip">أكملوا الاختبارين: '+completed+'</span><span class="chip">الناقصون: '+(all.length-completed)+'</span>';
- $("psychRows").innerHTML=records.map(x=>{
-  const done=!!x.one&&!!x.two,score=(Number(x.one?.score||0)+Number(x.two?.score||0));
-  return "<tr><td>"+safe(x.number)+"</td><td>"+safe(x.name)+"</td><td>"+(x.one?safe(x.one.score)+" / "+safe(x.one.total):"—")+"</td><td>"+(x.two?safe(x.two.score)+" / "+safe(x.two.total):"—")+"</td><td>"+(done?score+" / 91":"—")+"</td><td>"+(done?"مكتمل":"غير مكتمل")+"</td></tr>";
- }).join("")||'<tr><td colspan="6" class="empty">لا توجد نتائج مطابقة لاختباري علم النفس بعد</td></tr>';
-}
+function pairedPsychologyResults(){return results.filter(r=>r.quiz_id===PSY1||r.quiz_id===PSY2).map(r=>({number:String(r.student_number||"—"),name:String(r.student_name||""),one:r.quiz_id===PSY1?r:null,two:r.quiz_id===PSY2?r:null}));}
+function renderPsych(){const entries=pairedPsychologyResults().filter(x=>(x.name+" "+x.number).includes($("search").value.trim()));$("psychStats").innerHTML='<span class="chip">محاولات التقييمين: '+entries.length+'</span><span class="chip">كل محاولة مستقلة؛ لا تُدمج الأسماء المتشابهة</span>';$("psychRows").innerHTML=entries.map(x=>'<tr><td>'+safe(x.number)+'</td><td>'+safe(x.name)+'</td><td>'+(x.one?safe(x.one.score)+' / 36':"—")+'</td><td>'+(x.two?safe(x.two.score)+' / 55':"—")+'</td><td>—</td><td>محاولة مستقلة</td></tr>').join("")||'<tr><td colspan="6">لا توجد محاولات</td></tr>';}
 function downloadPsychologyExcel(){
  const records=pairedPsychologyResults();
  const rows=[["رقم الطالب","اسم الطالب","الاختبار الأول (من 36)","الاختبار الثاني (من 55)","المجموع (من 91)","حالة الإنجاز","تاريخ تسليم الأول","تاريخ تسليم الثاني"]];
  for(const e of records){
   const a=e.one,b=e.two,done=!!a&&!!b;
-  rows.push([e.number,e.name,a?a.score:"",b?b.score:"",done?Number(a.score)+Number(b.score):"",done?"مكتمل":"غير مكتمل",a?a.submitted_at:"",b?b.submitted_at:""]);
+  rows.push([e.number,e.name,a?a.score:"",b?b.score:"",done?Number(a.score)+Number(b.score):"","محاولة مستقلة",a?a.submitted_at:"",b?b.submitted_at:""]);
  }
  if(window.XLSX?.utils?.aoa_to_sheet){
   const wb=window.XLSX.utils.book_new(),ws=window.XLSX.utils.aoa_to_sheet(rows);
@@ -151,23 +136,8 @@ function showTab(next){
  if(next==="report"){load()}else{$("login").hidden=true;msg("")}
 }
 document.querySelectorAll("nav button").forEach(button=>button.onclick=()=>showTab(button.dataset.tab));
-async function loadQuestions(){
- try{
-  const assessments=await Promise.all([PSY1,PSY2].map(async id=>{
-   const response=await fetch(API+"/assessment-api?quiz_id="+encodeURIComponent(id));
-   if(!response.ok)throw new Error("تعذر تحميل جزء من أسئلة علم النفس");
-   return response.json();
-  }));
-  $("questionsList").innerHTML=assessments.map((data,part)=>{
-   const questions=Array.isArray(data.questions)?data.questions:[];
-   const heading="<h3>الاختبار "+(part+1)+" — "+questions.length+" سؤالًا</h3>";
-   return heading+questions.map((q,index)=>{
-    const image=typeof q.image==="string"&&q.image.startsWith("https://raw.githubusercontent.com/nmg200101-collab/naif/")?'<div><a href="'+safe(q.image)+'" target="_blank" rel="noopener">فتح الخريطة المفاهيمية</a></div>':"";
-    return '<div class="question"><strong>'+(index+1)+". "+safe(q.text)+'</strong><div class="muted">'+safe(q.topic||"")+" — المرجع: "+safe(q.page_ref||"")+'</div>'+image+'<div class="muted">'+(q.options||[]).map(option=>"<div>◯ "+safe(option)+"</div>").join("")+"</div></div>";
-   }).join("");
-  }).join("")||"لا توجد أسئلة";
- }catch{$("questionsList").textContent="تعذر تحميل الأسئلة؛ يمكنك فتح روابط الاختبارين أعلاه."}
-}
+async function loadQuestions(){const list=CATALOG.filter(x=>matchesFilter(x.id,"question"));$("questionsList").textContent="جارٍ تحميل أسئلة التقييمات...";const blocks=await Promise.all(list.map(async entry=>{try{const response=await fetch(API+"/assessment-api?quiz_id="+encodeURIComponent(entry.id));if(!response.ok)throw Error("تعذر تحميل الأسئلة");const data=await response.json();const questions=Array.isArray(data.questions)?data.questions:[];return '<h3>'+safe(entry.subject+" — "+entry.label)+" ("+questions.length+" سؤالًا)</h3>"+questions.map((q,i)=>'<div class="question"><strong>'+(i+1)+". "+safe(q.text)+'</strong><div class="muted">'+safe(q.topic||"")+" — "+safe(q.page_ref||"")+'</div>'+((q.options||[]).map(v=>'<div>◯ '+safe(v)+'</div>').join(""))+'</div>').join("");}catch(e){return '<p class="danger">'+safe(entry.subject+" — "+entry.label)+": "+safe(e.message)+'</p>';}}));$("questionsList").innerHTML=blocks.join("")||"لا توجد تقييمات مطابقة";}
+fillFilters();for(const prefix of ["question","result"]){$(prefix+"Subject").onchange=()=>{updateAssessmentFilters(prefix);prefix==="question"?loadQuestions():render();};$(prefix+"Assessment").onchange=()=>prefix==="question"?loadQuestions():render();}
 $("autoRefresh").checked=localStorage.getItem("teacherAutoRefresh")!=="false";
 $("compact").checked=localStorage.getItem("teacherCompact")==="true";
 $("autoRefresh").onchange=event=>localStorage.setItem("teacherAutoRefresh",String(event.target.checked));
