@@ -21,20 +21,22 @@
 <button id="installApp" class="install" type="button">إضافة اختصار إلى شاشة الهاتف</button>
 </header>
 <nav aria-label="أقسام التقويم"><button class="active" data-tab="questions" aria-selected="true">الأسئلة</button><button data-tab="report" aria-selected="false">نتائج طلابي</button><button data-tab="settings" aria-selected="false">الإعدادات</button></nav>
-<section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>تقويم المحاضرة الأولى — علم النفس التربوي</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
+<section class="panel" id="questions"><h2>الأسئلة المنشورة</h2><p>التقييمات المنشورة — علم النفس التربوي</p><p><a class="link" href="./assessment-template.html?quiz=psychology-35-45-20261118-p1" target="_blank" rel="noopener">الاختبار الأول (36 سؤالًا)</a> <a class="link" href="./assessment-template.html?quiz=psychology-46-61-20261118-p2" target="_blank" rel="noopener">الاختبار الثاني (55 سؤالًا)</a></p><p>يظهر أدناه الاختبار السابق ذي الثلاثين سؤالًا للأرشيف.</p><div id="questionsList">جاري تحميل الأسئلة...</div><p><a class="link" href="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/assessment-template.html?quiz=psychology-lecture-1-30-v1" target="_blank" rel="noopener">فتح التقويم كما يراه الطالب</a></p><small>عرض الأسئلة فقط؛ لا يغيّر هذا القسم الأسئلة المنشورة أو درجات الطلاب.</small></section>
 <section class="panel" id="settings" hidden><h2>الإعدادات</h2><label><input class="switch" type="checkbox" id="autoRefresh"> تحديث النتائج عند فتح القسم</label><label><input class="switch" type="checkbox" id="compact"> عرض كشف مختصر</label><p>تُرسل رسائل الدخول إلى البريد المعتمد للأستاذ.</p><p class="hint">لا تُحفظ كلمة المرور. يحفظ Supabase جلسة الدخول في هذا المتصفح عبر اتصال HTTPS ويجددها تلقائيًا. استخدم اختصارك على هاتفك الشخصي، وسجّل الخروج عند استخدام جهاز مشترك.</p><small>إعدادات عرض الاختبار محفوظة على هذا الهاتف. نشر الأسئلة محفوظ على الخادم.</small></section>
 <section class="panel" id="login" hidden><h2>دخول الأستاذ</h2><p>أرسل رابط التأكيد إلى البريد المعتمد وافتحه على هذا الهاتف. إذا تضمنت الرسالة رمزًا من 6 أرقام، أدخله هنا:</p><p><strong>حساب الأستاذ المعتمد</strong></p><button id="send" type="button">إرسال رمز دخول</button><div id="otpArea" hidden><label for="otp">رمز التحقق</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="الرمز المكوّن من 6 أرقام (إن وُجد)"><button id="verify" type="button">تأكيد الدخول</button><p class="hint">افتح أحدث رسالة وصلتك فقط، ثم اضغط رابط التأكيد. سيعود بك الرابط إلى كشف النتائج مباشرة. لا تستخدم رابطًا قديمًا سبق فتحه أو انتهت صلاحيته.</p></div></section>
-<section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p></section>
+<section class="panel" id="report" hidden><h2>كشف النتائج</h2><div class="bar"><input id="search" type="search" placeholder="ابحث باسم الطالب" aria-label="البحث باسم الطالب"><button id="refresh" type="button">تحديث</button><button id="logout" type="button">خروج</button></div><div class="stats" id="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>تاريخ التسليم</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div><p><small>تعرض الأوقات بتوقيت اليمن. تظهر المحاولات المتكررة كسجلات مستقلة، وبحد أقصى 1000 محاولة.</small></p><hr><h2>علم النفس التربوي — نتائج الاختبارين المرتبطة</h2><p>يُربط الاختباران برقم الطالب، وتُعرض آخر محاولة محفوظة لكل جزء. لا تختلط النتائج بتقييم ثقافة عربية.</p><div class="bar"><button id="exportPsych" type="button">تصدير كشف علم النفس إلى Excel</button><button id="refreshPsych" type="button">تحديث نتائج الاختبارين</button></div><div id="psychStats" class="stats" aria-live="polite"></div><div class="scroll"><table><thead><tr><th>رقم الطالب</th><th>اسم الطالب</th><th>الاختبار الأول /36</th><th>الاختبار الثاني /55</th><th>المجموع /91</th><th>الحالة</th></tr></thead><tbody id="psychRows"><tr><td colspan="6">سجّل الدخول لعرض النتائج</td></tr></tbody></table></div></section>
 <section class="panel" id="msg" role="status" aria-live="polite"></section>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script type="module">
 import {createClient} from "https://esm.sh/@supabase/supabase-js@2.57.0";
 const EMAIL="mohamedalamiry8@gmail.com";
-const APP_URL="https://raw.githack.com/nmg200101-collab/naif/teacher-results-release-20261031b/educational-assessments/shared/teacher-results.html";
+const APP_URL="https://raw.githack.com/nmg200101-collab/naif/main/educational-assessments/shared/teacher-results.html?view=results";
 const API="https://nicgczedldimtcnlawjo.supabase.co/functions/v1";
 const db=createClient("https://nicgczedldimtcnlawjo.supabase.co","sb_publishable__3nfz5BI7YDANzVmGfLHPQ_g2zCLjJU",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"naif-teacher-results-auth-v1"}});
 const $=id=>document.getElementById(id);
 let results=[],tab="questions",loadSerial=0,installPrompt=null;
+const PSY1="psychology-35-45-20261118-p1",PSY2="psychology-46-61-20261118-p2";
 const msg=s=>$("msg").textContent=s;
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function load(){
@@ -61,7 +63,7 @@ async function load(){
 }
 function render(){
  const query=$("search").value.trim().toLocaleLowerCase("ar");
- const filtered=results.filter(row=>String(row.student_name||"").toLocaleLowerCase("ar").includes(query));
+ const filtered=results.filter(row=>(String(row.student_name||"")+" "+String(row.student_number||"")).toLocaleLowerCase("ar").includes(query));
  const names=new Set(results.map(row=>String(row.student_name||"").trim()).filter(Boolean));
  $("stats").innerHTML='<span class="chip">المحاولات: '+results.length+'</span><span class="chip">الطلاب: '+names.size+'</span><span class="chip">المعروض: '+filtered.length+'</span>';
  $("rows").innerHTML=filtered.map(row=>{
@@ -69,11 +71,54 @@ function render(){
   const submitted=Number.isNaN(date.getTime())?"—":date.toLocaleString("ar-YE",{timeZone:"Asia/Aden",dateStyle:"short",timeStyle:"short"});
   return "<tr><td>"+safe(row.student_name)+"</td><td>"+safe(row.score)+" / "+safe(row.total)+"</td><td>"+safe(submitted)+"</td></tr>";
  }).join("")||'<tr><td colspan="3" class="empty">لا توجد نتائج مطابقة</td></tr>';
+ renderPsych();
+}
+function pairedPsychologyResults(){
+ const joined=new Map();
+ for(const r of [...results].reverse()){
+  if(r.quiz_id!==PSY1&&r.quiz_id!==PSY2)continue;
+  const number=String(r.student_number||"").trim().toUpperCase();
+  if(!number)continue;
+  const entry=joined.get(number)||{number,name:"",one:null,two:null};
+  entry.name=String(r.student_name||entry.name);
+  entry[r.quiz_id===PSY1?"one":"two"]=r;
+  joined.set(number,entry);
+ }
+ return [...joined.values()].sort((a,b)=>a.number.localeCompare(b.number,"ar",{numeric:true}));
+}
+function renderPsych(){
+ const textQuery=$("search").value.trim().toLocaleLowerCase("ar");
+ const records=pairedPsychologyResults().filter(x=>(x.number+" "+x.name).toLocaleLowerCase("ar").includes(textQuery));
+ const all=pairedPsychologyResults(),completed=all.filter(x=>x.one&&x.two).length;
+ $("psychStats").innerHTML='<span class="chip">الطلاب: '+all.length+'</span><span class="chip">أكملوا الاختبارين: '+completed+'</span><span class="chip">الناقصون: '+(all.length-completed)+'</span>';
+ $("psychRows").innerHTML=records.map(x=>{
+  const done=!!x.one&&!!x.two,score=(Number(x.one?.score||0)+Number(x.two?.score||0));
+  return "<tr><td>"+safe(x.number)+"</td><td>"+safe(x.name)+"</td><td>"+(x.one?safe(x.one.score)+" / "+safe(x.one.total):"—")+"</td><td>"+(x.two?safe(x.two.score)+" / "+safe(x.two.total):"—")+"</td><td>"+(done?score+" / 91":"—")+"</td><td>"+(done?"مكتمل":"غير مكتمل")+"</td></tr>";
+ }).join("")||'<tr><td colspan="6" class="empty">لا توجد نتائج مطابقة لاختباري علم النفس بعد</td></tr>';
+}
+function downloadPsychologyExcel(){
+ const records=pairedPsychologyResults();
+ const rows=[["رقم الطالب","اسم الطالب","الاختبار الأول (من 36)","الاختبار الثاني (من 55)","المجموع (من 91)","حالة الإنجاز","تاريخ تسليم الأول","تاريخ تسليم الثاني"]];
+ for(const e of records){
+  const a=e.one,b=e.two,done=!!a&&!!b;
+  rows.push([e.number,e.name,a?a.score:"",b?b.score:"",done?Number(a.score)+Number(b.score):"",done?"مكتمل":"غير مكتمل",a?a.submitted_at:"",b?b.submitted_at:""]);
+ }
+ if(window.XLSX?.utils?.aoa_to_sheet){
+  const wb=window.XLSX.utils.book_new(),ws=window.XLSX.utils.aoa_to_sheet(rows);
+  ws["!cols"]=[{wch:18},{wch:32},{wch:24},{wch:24},{wch:24},{wch:18},{wch:28},{wch:28}];
+  window.XLSX.utils.book_append_sheet(wb,ws,"علم النفس 35-61");
+  window.XLSX.writeFile(wb,"نتائج_علم_النفس_التربوي_35-61.xlsx");
+  msg("تم تجهيز ملف Excel؛ يحتوي على نتائج "+records.length+" طالبًا.");return;
+ }
+ const csv="\uFEFF"+rows.map(c=>c.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+ const link=document.createElement("a");link.href=url;link.download="نتائج_علم_النفس_التربوي_35-61.csv";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ msg("تم تنزيل ملف CSV الذي يفتحه Excel؛ تعذر تحميل مكتبة XLSX في هذا المتصفح.");
 }
 $("send").onclick=async()=>{
  $("send").disabled=true;msg("جارٍ إرسال رمز الدخول...");
  try{
-  const {error}=await db.auth.signInWithOtp({email:EMAIL,options:{shouldCreateUser:false,emailRedirectTo:APP_URL+"&view=results"}});
+  const {error}=await db.auth.signInWithOtp({email:EMAIL,options:{shouldCreateUser:false,emailRedirectTo:APP_URL}});
   if(error)throw error;
   $("otpArea").hidden=false;
   msg("أُرسل رابط التأكيد إلى البريد. افتح أحدث رسالة على هذا الهاتف؛ لا تكرر الإرسال الآن.");
@@ -94,6 +139,8 @@ $("verify").onclick=async()=>{
  finally{$("verify").disabled=false}
 };
 $("refresh").onclick=load;
+$("refreshPsych").onclick=load;
+$("exportPsych").onclick=downloadPsychologyExcel;
 $("search").oninput=render;
 $("logout").onclick=async()=>{await db.auth.signOut();results=[];render();await load()};
 function showTab(next){
