@@ -75,7 +75,7 @@ function render(){
  $("rows").innerHTML=filtered.map(row=>{
   const date=new Date(row.submitted_at);
   const submitted=Number.isNaN(date.getTime())?"—":date.toLocaleString("ar-YE",{timeZone:"Asia/Aden",dateStyle:"short",timeStyle:"short"});
-  return "<tr><td>"+safe(row.student_name)+"</td><td>"+safe(CATALOG.find(x=>x.id===row.quiz_id)?.subject||"مقرر غير محدد")+"</td><td>"+safe(row.score)+" / "+safe(row.total)+"</td><td>"+safe(submitted)+"</td><td><button type=\"button\" data-attempt=\""+safe(row.id)+"\">إدارة المحاولة</button></td></tr>";
+  return "<tr><td>"+safe(row.student_name)+"</td><td>"+safe(CATALOG.find(x=>x.id===row.quiz_id)?.subject||"مقرر غير محدد")+"</td><td>"+safe(row.score)+" / "+safe(row.total)+"</td><td>"+safe(submitted)+"</td><td><button type=\"button\" data-attempt=\""+safe(row.id)+"\">حذف الاسم</button></td></tr>";
  }).join("")||'<tr><td colspan="5" class="empty">لا توجد نتائج مطابقة</td></tr>';
  renderPsych();
 }
